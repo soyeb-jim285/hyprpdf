@@ -1,0 +1,14 @@
+build/
+build-*/
+.cache/
+compile_commands.json
+.qmlls.ini
+.qtc_clangd/
+*.user
+*.user.*
+*.swp
+*.swo
+*~
+CMakeUserPresets.json
+.vscode/
+.idea/

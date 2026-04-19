@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=HyprPDF
+GenericName=Document Viewer
+Comment=Qt6/QML PDF and office document viewer with annotations
+Exec=hyprpdf %F
+Icon=hyprpdf
+Terminal=false
+Categories=Office;Viewer;Qt;
+MimeType=application/pdf;application/vnd.openxmlformats-officedocument.presentationml.presentation;application/vnd.openxmlformats-officedocument.wordprocessingml.document;application/vnd.oasis.opendocument.presentation;application/vnd.oasis.opendocument.text;
+Keywords=pdf;viewer;document;annotate;highlight;

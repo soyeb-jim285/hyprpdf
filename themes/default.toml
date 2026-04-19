@@ -1,0 +1,18 @@
+name = "default"
+
+[colors]
+background     = "#1e1e2e"
+surface        = "#313244"
+surface_alt    = "#45475a"
+text           = "#cdd6f4"
+text_muted     = "#a6adc8"
+accent         = "#89b4fa"
+accent_alt     = "#cba6f7"
+border         = "#585b70"
+
+[annotations]
+highlight      = "#f9e2af"
+underline      = "#a6e3a1"
+strikeout      = "#f38ba8"
+ink            = "#89b4fa"
+note           = "#fab387"
