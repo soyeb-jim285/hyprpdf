@@ -1,0 +1,6 @@
+[submodule "src/qml/Quill"]
+	path = src/qml/Quill
+	url = git@github.com:soyeb-jim285/quill.git
+[submodule "src/qml/icons"]
+	path = src/qml/icons
+	url = git@github.com:soyeb-jim285/quill-icons.git
