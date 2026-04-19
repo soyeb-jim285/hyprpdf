@@ -7,8 +7,9 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
 find_package(Qt6 6.6 REQUIRED COMPONENTS
-    Core Gui Qml Quick QuickControls2 Pdf Svg Widgets DBus Test
+    Core Gui Qml Quick QuickControls2 Svg Widgets DBus Test
 )
+find_package(Qt6 OPTIONAL_COMPONENTS Pdf)
 
 set(HYPRPDF_DATA_DIR "${CMAKE_SOURCE_DIR}" CACHE PATH
     "Runtime data dir (themes, qml). Packagers override to /usr/share/hyprpdf")

@@ -1,0 +1,22 @@
+name = "Catppuccin Latte"
+
+[colors]
+base    = "#eff1f5"
+mantle  = "#e6e9ef"
+crust   = "#dce0e8"
+surface = "#ccd0da"
+overlay = "#7c7f93"
+text    = "#4c4f69"
+subtext = "#5c5f77"
+muted   = "#6c6f85"
+accent  = "#1e66f5"
+success = "#40a02b"
+warning = "#df8e1d"
+error   = "#d20f39"
+
+[annotations]
+highlight = "#df8e1d"
+underline = "#40a02b"
+strikeout = "#d20f39"
+ink       = "#1e66f5"
+note      = "#fe640b"

@@ -8,7 +8,7 @@ target_link_libraries(hyprpdf PRIVATE
     Qt6::Qml
     Qt6::Quick
     Qt6::QuickControls2
-    Qt6::Pdf
+    $<$<TARGET_EXISTS:Qt6::Pdf>:Qt6::Pdf>
     Qt6::Svg
     Qt6::Widgets
     Qt6::DBus
