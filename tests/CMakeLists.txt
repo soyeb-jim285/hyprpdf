@@ -10,3 +10,4 @@ endfunction()
 
 hyprpdf_test(tst_themeloader ${CMAKE_SOURCE_DIR}/src/services/themeloader.cpp)
 hyprpdf_test(tst_configmanager ${CMAKE_SOURCE_DIR}/src/services/configmanager.cpp)
+hyprpdf_test(tst_recentfilesmodel ${CMAKE_SOURCE_DIR}/src/models/recentfilesmodel.cpp)
