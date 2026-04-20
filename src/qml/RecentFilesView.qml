@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
 import Quill 1.0 as Q
-import Icons 1.0 as Ico
 import HyprPDF 1.0
 
 Item {
@@ -65,9 +64,9 @@ Item {
                         }
                     }
 
-                    Component { id: fileText;   Ico.IconFileText   { size: 24; color: Q.Theme.textPrimary } }
-                    Component { id: layoutGrid; Ico.IconLayoutGrid { size: 24; color: Q.Theme.textPrimary } }
-                    Component { id: bookOpen;   Ico.IconBookOpen   { size: 24; color: Q.Theme.textPrimary } }
+                    Component { id: fileText;   IconFileText   { size: 24; color: Q.Theme.textPrimary } }
+                    Component { id: layoutGrid; IconLayoutGrid { size: 24; color: Q.Theme.textPrimary } }
+                    Component { id: bookOpen;   IconBookOpen   { size: 24; color: Q.Theme.textPrimary } }
 
                     ColumnLayout {
                         Layout.fillWidth: true

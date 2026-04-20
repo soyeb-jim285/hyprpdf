@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
 import Quill 1.0 as Q
-import Icons 1.0 as Ico
 import HyprPDF 1.0
 
 Rectangle {
@@ -75,7 +74,7 @@ Rectangle {
                         implicitWidth: 18; implicitHeight: 18
                         tipText: "Close tab"
                         onClicked: documentModel.closeTab(index)
-                        Ico.IconX { size: 12; color: Q.Theme.textSecondary; anchors.centerIn: parent }
+                        IconX { size: 12; color: Q.Theme.textSecondary; anchors.centerIn: parent }
                     }
                 }
             }
@@ -101,7 +100,7 @@ Rectangle {
                 text: "Open another document (Ctrl+T)"
                 visible: newHover.hovered
             }
-            Ico.IconPlus { size: 14; color: Q.Theme.textPrimary; anchors.centerIn: parent }
+            IconPlus { size: 14; color: Q.Theme.textPrimary; anchors.centerIn: parent }
         }
 
         Item { Layout.fillWidth: true }

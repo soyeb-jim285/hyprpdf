@@ -36,6 +36,16 @@ qt_add_qml_module(hyprpdf
         qml/Toolbar.qml
         qml/TabsBar.qml
         qml/RecentFilesView.qml
+        qml/icons/IconFolder.qml
+        qml/icons/IconZoomIn.qml
+        qml/icons/IconZoomOut.qml
+        qml/icons/IconMaximize.qml
+        qml/icons/IconSettings.qml
+        qml/icons/IconX.qml
+        qml/icons/IconPlus.qml
+        qml/icons/IconFileText.qml
+        qml/icons/IconLayoutGrid.qml
+        qml/icons/IconBookOpen.qml
     RESOURCE_PREFIX /
 )
 

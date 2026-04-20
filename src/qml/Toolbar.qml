@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
 import Quill 1.0 as Q
-import Icons 1.0 as Ico
 import HyprPDF 1.0
 
 Rectangle {
@@ -52,22 +51,22 @@ Rectangle {
         IBtn {
             tipText: "Open (Ctrl+O)"
             onClicked: root.openRequested()
-            Ico.IconFolder { size: 18; color: Q.Theme.textPrimary; anchors.centerIn: parent }
+            IconFolder { size: 18; color: Q.Theme.textPrimary; anchors.centerIn: parent }
         }
         IBtn {
             tipText: "Zoom in (Ctrl++)"
             onClicked: root.zoomInRequested()
-            Ico.IconZoomIn { size: 18; color: Q.Theme.textPrimary; anchors.centerIn: parent }
+            IconZoomIn { size: 18; color: Q.Theme.textPrimary; anchors.centerIn: parent }
         }
         IBtn {
             tipText: "Zoom out (Ctrl+-)"
             onClicked: root.zoomOutRequested()
-            Ico.IconZoomOut { size: 18; color: Q.Theme.textPrimary; anchors.centerIn: parent }
+            IconZoomOut { size: 18; color: Q.Theme.textPrimary; anchors.centerIn: parent }
         }
         IBtn {
             tipText: "Fit page (Ctrl+2)"
             onClicked: root.fitPageRequested()
-            Ico.IconMaximize { size: 18; color: Q.Theme.textPrimary; anchors.centerIn: parent }
+            IconMaximize { size: 18; color: Q.Theme.textPrimary; anchors.centerIn: parent }
         }
 
         Item { Layout.fillWidth: true }
@@ -75,7 +74,7 @@ Rectangle {
         IBtn {
             tipText: "Settings (stub — v0.6)"
             btnEnabled: false
-            Ico.IconSettings { size: 18; color: Q.Theme.textTertiary; anchors.centerIn: parent }
+            IconSettings { size: 18; color: Q.Theme.textTertiary; anchors.centerIn: parent }
         }
     }
 }
