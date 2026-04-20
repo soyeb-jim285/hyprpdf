@@ -12,6 +12,9 @@ find_package(Qt6 6.6 REQUIRED COMPONENTS
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(POPPLER_QT6 REQUIRED IMPORTED_TARGET poppler-qt6)
 
+set(QT_QML_IMPORT_PATH "${CMAKE_SOURCE_DIR}/src/qml" CACHE PATH "" FORCE)
+set(QML_IMPORT_PATH    "${CMAKE_SOURCE_DIR}/src/qml" CACHE STRING "" FORCE)
+
 set(HYPRPDF_DATA_DIR "${CMAKE_SOURCE_DIR}" CACHE PATH
     "Runtime data dir (themes, qml). Packagers override to /usr/share/hyprpdf")
 set(HYPRPDF_SOURCE_DIR "${CMAKE_SOURCE_DIR}" CACHE PATH

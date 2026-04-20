@@ -1,5 +1,12 @@
 qt_add_executable(hyprpdf
     main.cpp
+    services/themeloader.cpp
+    services/configmanager.cpp
+    services/documentcontroller.cpp
+    services/pdfdoc.cpp
+    services/pdfpageimageprovider.cpp
+    models/documentmodel.cpp
+    models/recentfilesmodel.cpp
 )
 
 target_link_libraries(hyprpdf PRIVATE
@@ -14,13 +21,29 @@ target_link_libraries(hyprpdf PRIVATE
     PkgConfig::POPPLER_QT6
 )
 
+target_include_directories(hyprpdf PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
+set_source_files_properties(qml/Theme.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
+
+# TODO Task 2.14: add Toolbar.qml, TabsBar.qml, RecentFilesView.qml
 qt_add_qml_module(hyprpdf
     URI HyprPDF
     VERSION 1.0
+    NO_CACHEGEN
     QML_FILES
         qml/Main.qml
+        qml/Theme.qml
         qml/PdfView.qml
     RESOURCE_PREFIX /
 )
 
 install(TARGETS hyprpdf RUNTIME DESTINATION bin)
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/themes/
+        DESTINATION share/hyprpdf/themes
+        FILES_MATCHING PATTERN "*.toml")
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/src/qml/Quill
+        DESTINATION share/hyprpdf/src/qml)
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/src/qml/icons
+        DESTINATION share/hyprpdf/src/qml)
+install(FILES ${CMAKE_SOURCE_DIR}/dist/hyprpdf.desktop
+        DESTINATION share/applications)
