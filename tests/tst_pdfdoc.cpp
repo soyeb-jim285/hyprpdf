@@ -46,6 +46,39 @@ private slots:
         d.reset();
         QCOMPARE(PdfDoc::byId(id), nullptr);
     }
+
+    void searchFindsMatches() {
+        auto d = PdfDoc::load(fixture());
+        QVERIFY(d != nullptr);
+        const QString needle = "the";          // common word
+        bool anyMatch = false;
+        for (int p = 0; p < d->pageCount(); ++p) {
+            const auto matches = d->search(p, needle);
+            if (!matches.isEmpty()) { anyMatch = true; break; }
+        }
+        QVERIFY(anyMatch);
+    }
+
+    void searchEmptyQueryReturnsEmpty() {
+        auto d = PdfDoc::load(fixture());
+        QVERIFY(d != nullptr);
+        QCOMPARE(d->search(0, "").size(), 0);
+    }
+
+    void textInRectReturnsSomething() {
+        auto d = PdfDoc::load(fixture());
+        QVERIFY(d != nullptr);
+        const QSizeF ps = d->pageSize(0);
+        const QRectF fullPage(0, 0, ps.width(), ps.height());
+        const QString text = d->textInRect(0, fullPage);
+        QVERIFY(!text.isEmpty());
+    }
+
+    void tocEmptyForNoOutline() {
+        auto d = PdfDoc::load(fixture());  // sample.pdf has no TOC
+        QVERIFY(d != nullptr);
+        QCOMPARE(d->toc().size(), 0);
+    }
 };
 QTEST_MAIN(TestPdfDoc)
 #include "tst_pdfdoc.moc"

@@ -4,6 +4,9 @@
 #include <QString>
 #include <QSizeF>
 #include <QImage>
+#include <QRectF>
+#include <QVector>
+#include <QVariant>
 #include <memory>
 
 namespace Poppler { class Document; }
@@ -32,11 +35,23 @@ public:
     // Renders page at given target width (px). Height follows page aspect.
     QImage renderPage(int index, int targetWidth) const;
 
+    struct TocEntry {
+        QString title;
+        int pageIndex;
+        QVector<TocEntry> children;
+    };
+
+    Q_INVOKABLE QVariantList search(int page, const QString &text) const;
+    Q_INVOKABLE QString textInRect(int page, const QRectF &rect) const;
+    const QVector<TocEntry> &toc() const;
+
 private:
     explicit PdfDoc(std::unique_ptr<Poppler::Document> doc, QObject *parent = nullptr);
 
     int m_id;
     std::unique_ptr<Poppler::Document> m_doc;
+    mutable QVector<TocEntry> m_toc;
+    mutable bool m_tocBuilt = false;
 
     static int s_nextId;
     static QHash<int, PdfDoc*> s_registry;

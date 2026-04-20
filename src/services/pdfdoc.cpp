@@ -63,3 +63,40 @@ QImage PdfDoc::renderPage(int index, int targetWidth) const {
     const double dpi = 72.0 * (static_cast<double>(targetWidth) / ps.width());
     return p->renderToImage(dpi, dpi);
 }
+
+QVariantList PdfDoc::search(int page, const QString &text) const {
+    QVariantList result;
+    if (!m_doc || page < 0 || page >= m_doc->numPages() || text.isEmpty()) return result;
+    auto p = m_doc->page(page);
+    if (!p) return result;
+    auto rects = p->search(text, Poppler::Page::IgnoreCase);
+    for (const auto &r : rects) result.append(QVariant::fromValue(r));
+    return result;
+}
+
+QString PdfDoc::textInRect(int page, const QRectF &rect) const {
+    if (!m_doc || page < 0 || page >= m_doc->numPages() || rect.isEmpty()) return {};
+    auto p = m_doc->page(page);
+    if (!p) return {};
+    return p->text(rect).trimmed();
+}
+
+static void buildTocFromOutline(const QVector<Poppler::OutlineItem> &items,
+                                QVector<PdfDoc::TocEntry> &out) {
+    for (const auto &item : items) {
+        PdfDoc::TocEntry e;
+        e.title = item.name();
+        auto dest = item.destination();
+        e.pageIndex = (dest && dest->pageNumber() > 0) ? dest->pageNumber() - 1 : -1;
+        buildTocFromOutline(item.children(), e.children);
+        out.append(e);
+    }
+}
+
+const QVector<PdfDoc::TocEntry> &PdfDoc::toc() const {
+    if (!m_tocBuilt) {
+        m_tocBuilt = true;
+        if (m_doc) buildTocFromOutline(m_doc->outline(), m_toc);
+    }
+    return m_toc;
+}
