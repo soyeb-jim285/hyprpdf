@@ -1,42 +1,115 @@
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Pdf
+import HyprPDF 1.0
 
 Item {
     id: root
 
-    property alias document: pdfDoc
-    property string documentTitle: pdfDoc.status === PdfDocument.Ready ? pdfDoc.title : ""
+    // PdfDoc QObject. Exposes: id, pageCount, title, pageSize(i), text(i).
+    property var document: null
 
-    function openPath(path) {
-        pdfDoc.source = "file://" + path
+    property real zoom: 1.0
+    property int  currentPage: 0
+
+    function zoomIn()   { zoom = zoom * 1.2 }
+    function zoomOut()  { zoom = zoom / 1.2 }
+    function fitWidth() {
+        if (!root.document || root.document.pageCount <= 0) return
+        var s = root.document.pageSize(0)
+        if (s.width > 0)
+            zoom = (root.width - 32) / (s.width * (96.0 / 72.0))
     }
-    function zoomIn()   { view.renderScale *= 1.2 }
-    function zoomOut()  { view.renderScale /= 1.2 }
-    function fitWidth() { view.renderScale = width / Math.max(1, pdfDoc.maxPageWidth) }
     function fitPage() {
-        const s1 = width  / Math.max(1, pdfDoc.maxPageWidth)
-        const s2 = height / Math.max(1, pdfDoc.maxPageHeight)
-        view.renderScale = Math.min(s1, s2)
+        if (!root.document || root.document.pageCount <= 0) return
+        var s = root.document.pageSize(0)
+        if (s.width > 0 && s.height > 0) {
+            var pxW = s.width  * (96.0 / 72.0)
+            var pxH = s.height * (96.0 / 72.0)
+            zoom = Math.min((root.width - 32) / pxW, (root.height - 32) / pxH)
+        }
     }
-    function scrollBy(dy)  { view.contentY = Math.max(0, view.contentY + dy) }
-    function nextPage()    { view.goToPage(Math.min(pdfDoc.pageCount - 1, view.currentPage + 1)) }
-    function prevPage()    { view.goToPage(Math.max(0, view.currentPage - 1)) }
-
-    PdfDocument { id: pdfDoc }
-
-    PdfMultiPageView {
-        id: view
-        anchors.fill: parent
-        document: pdfDoc
+    function scrollBy(dy) {
+        list.contentY = Math.max(0, list.contentY + dy)
+    }
+    function nextPage() {
+        if (root.document)
+            list.positionViewAtIndex(
+                Math.min(root.document.pageCount - 1, root.currentPage + 1),
+                ListView.Beginning)
+    }
+    function prevPage() {
+        if (root.document)
+            list.positionViewAtIndex(
+                Math.max(0, root.currentPage - 1),
+                ListView.Beginning)
     }
 
-    Label {
+    // Empty-state label
+    Text {
         anchors.centerIn: parent
-        visible: pdfDoc.status !== PdfDocument.Ready
-        text: pdfDoc.status === PdfDocument.Null
-              ? "Open a document with Ctrl+O"
-              : "Loading…"
+        visible: !root.document
+        text: "No document"
+        color: Theme.subtext
         opacity: 0.6
+    }
+
+    ListView {
+        id: list
+        anchors.fill: parent
+        visible: !!root.document
+        model: root.document ? root.document.pageCount : 0
+        spacing: 8
+        clip: true
+        cacheBuffer: 2000
+        onCurrentIndexChanged: root.currentPage = currentIndex
+
+        delegate: Item {
+            id: pageItem
+
+            readonly property int targetW: {
+                if (!root.document) return 0
+                var s = root.document.pageSize(index)
+                var pxW = s.width * (96.0 / 72.0)
+                return Math.max(100, Math.round(pxW * root.zoom))
+            }
+            readonly property real pageAspect: {
+                if (!root.document) return 1.0
+                var s = root.document.pageSize(index)
+                return (s.height > 0 && s.width > 0)
+                    ? (s.height / s.width)
+                    : (792.0 / 612.0)
+            }
+
+            width:  list.width
+            height: targetW > 0 ? Math.round(targetW * pageAspect) : 800
+
+            Rectangle {
+                anchors.centerIn: parent
+                width:  pageItem.targetW
+                height: pageItem.height
+                color: "white"
+                border.color: Theme.surface
+                border.width: 1
+
+                Image {
+                    id: img
+                    anchors.fill: parent
+                    source: root.document
+                            ? ("image://pdf/" + root.document.id
+                               + "/" + index
+                               + "/" + pageItem.targetW)
+                            : ""
+                    asynchronous: true
+                    cache: false
+                    fillMode: Image.PreserveAspectFit
+                }
+
+                BusyIndicator {
+                    anchors.centerIn: parent
+                    running: img.status !== Image.Ready
+                    visible: running
+                }
+            }
+        }
     }
 }

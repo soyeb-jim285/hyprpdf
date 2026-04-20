@@ -25,7 +25,6 @@ target_include_directories(hyprpdf PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 set_source_files_properties(qml/Theme.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 
-# TODO Task 2.14: add Toolbar.qml, TabsBar.qml, RecentFilesView.qml
 qt_add_qml_module(hyprpdf
     URI HyprPDF
     VERSION 1.0
@@ -34,6 +33,9 @@ qt_add_qml_module(hyprpdf
         qml/Main.qml
         qml/Theme.qml
         qml/PdfView.qml
+        qml/Toolbar.qml
+        qml/TabsBar.qml
+        qml/RecentFilesView.qml
     RESOURCE_PREFIX /
 )
 
