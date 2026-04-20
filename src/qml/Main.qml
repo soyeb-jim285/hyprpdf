@@ -73,21 +73,30 @@ ApplicationWindow {
         return stack.itemAt(i)
     }
 
+    Action { id: actOpen;     text: "Open...";    shortcut: "Ctrl+O"; onTriggered: openDialog.open() }
+    Action { id: actNewTab;   text: "New tab";    shortcut: "Ctrl+T"; onTriggered: openDialog.open() }
+    Action { id: actCloseTab; text: "Close tab";  shortcut: "Ctrl+W"; onTriggered: documentController.closeCurrent() }
+    Action { id: actQuit;     text: "Quit";       shortcut: "Ctrl+Q"; onTriggered: Qt.quit() }
+    Action { id: actZoomIn;   text: "Zoom in";    shortcut: "Ctrl++"; onTriggered: { var v = curView(); if (v) v.zoomIn() } }
+    Action { id: actZoomOut;  text: "Zoom out";   shortcut: "Ctrl+-"; onTriggered: { var v = curView(); if (v) v.zoomOut() } }
+    Action { id: actFitWidth; text: "Fit width";  shortcut: "Ctrl+1"; onTriggered: { var v = curView(); if (v) v.fitWidth() } }
+    Action { id: actFitPage;  text: "Fit page";   shortcut: "Ctrl+2"; onTriggered: { var v = curView(); if (v) v.fitPage() } }
+
     menuBar: MenuBar {
         Menu {
             title: "&File"
-            MenuItem { text: "Open...";    shortcut: "Ctrl+O"; onTriggered: openDialog.open() }
-            MenuItem { text: "New tab";    shortcut: "Ctrl+T"; onTriggered: openDialog.open() }
-            MenuItem { text: "Close tab";  shortcut: "Ctrl+W"; onTriggered: documentController.closeCurrent() }
+            MenuItem { action: actOpen }
+            MenuItem { action: actNewTab }
+            MenuItem { action: actCloseTab }
             MenuSeparator {}
-            MenuItem { text: "Quit";       shortcut: "Ctrl+Q"; onTriggered: Qt.quit() }
+            MenuItem { action: actQuit }
         }
         Menu {
             title: "&View"
-            MenuItem { text: "Zoom in";   shortcut: "Ctrl++"; onTriggered: { var v = curView(); if (v) v.zoomIn() } }
-            MenuItem { text: "Zoom out";  shortcut: "Ctrl+-"; onTriggered: { var v = curView(); if (v) v.zoomOut() } }
-            MenuItem { text: "Fit width"; shortcut: "Ctrl+1"; onTriggered: { var v = curView(); if (v) v.fitWidth() } }
-            MenuItem { text: "Fit page";  shortcut: "Ctrl+2"; onTriggered: { var v = curView(); if (v) v.fitPage() } }
+            MenuItem { action: actZoomIn }
+            MenuItem { action: actZoomOut }
+            MenuItem { action: actFitWidth }
+            MenuItem { action: actFitPage }
         }
     }
 
