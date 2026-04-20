@@ -11,3 +11,6 @@ endfunction()
 hyprpdf_test(tst_themeloader ${CMAKE_SOURCE_DIR}/src/services/themeloader.cpp)
 hyprpdf_test(tst_configmanager ${CMAKE_SOURCE_DIR}/src/services/configmanager.cpp)
 hyprpdf_test(tst_recentfilesmodel ${CMAKE_SOURCE_DIR}/src/models/recentfilesmodel.cpp)
+
+hyprpdf_test(tst_pdfdoc ${CMAKE_SOURCE_DIR}/src/services/pdfdoc.cpp)
+target_link_libraries(tst_pdfdoc PRIVATE PkgConfig::POPPLER_QT6)
