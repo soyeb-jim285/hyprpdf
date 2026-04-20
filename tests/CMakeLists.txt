@@ -14,3 +14,8 @@ hyprpdf_test(tst_recentfilesmodel ${CMAKE_SOURCE_DIR}/src/models/recentfilesmode
 
 hyprpdf_test(tst_pdfdoc ${CMAKE_SOURCE_DIR}/src/services/pdfdoc.cpp)
 target_link_libraries(tst_pdfdoc PRIVATE PkgConfig::POPPLER_QT6)
+
+hyprpdf_test(tst_documentmodel
+    ${CMAKE_SOURCE_DIR}/src/models/documentmodel.cpp
+    ${CMAKE_SOURCE_DIR}/src/services/pdfdoc.cpp)
+target_link_libraries(tst_documentmodel PRIVATE PkgConfig::POPPLER_QT6)
