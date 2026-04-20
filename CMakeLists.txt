@@ -9,7 +9,8 @@ set(CMAKE_AUTORCC ON)
 find_package(Qt6 6.6 REQUIRED COMPONENTS
     Core Gui Qml Quick QuickControls2 Svg Widgets DBus Test
 )
-find_package(Qt6 OPTIONAL_COMPONENTS Pdf)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(POPPLER_QT6 REQUIRED IMPORTED_TARGET poppler-qt6)
 
 set(HYPRPDF_DATA_DIR "${CMAKE_SOURCE_DIR}" CACHE PATH
     "Runtime data dir (themes, qml). Packagers override to /usr/share/hyprpdf")
