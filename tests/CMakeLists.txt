@@ -30,3 +30,8 @@ hyprpdf_test(tst_searchcontroller
     ${CMAKE_SOURCE_DIR}/src/services/searchcontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/services/pdfdoc.cpp)
 target_link_libraries(tst_searchcontroller PRIVATE PkgConfig::POPPLER_QT6)
+
+hyprpdf_test(tst_outlinemodel
+    ${CMAKE_SOURCE_DIR}/src/models/outlinemodel.cpp
+    ${CMAKE_SOURCE_DIR}/src/services/pdfdoc.cpp)
+target_link_libraries(tst_outlinemodel PRIVATE PkgConfig::POPPLER_QT6)
