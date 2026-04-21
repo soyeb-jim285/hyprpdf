@@ -156,13 +156,13 @@ Item {
                         y: modelData.y * pageItem.pxPerPt
                         width:  modelData.width  * pageItem.pxPerPt
                         height: modelData.height * pageItem.pxPerPt
-                        color: Theme.warning
-                        opacity: 0.35
-                        border.color: Theme.warning
+                        color: "#f9e2af"
+                        opacity: 0.55
+                        border.color: "#d4a72c"
                         border.width: (root.searchController
                                        && root.searchController.currentPage === index
                                        && root.searchController.currentRect.x === modelData.x
-                                       && root.searchController.currentRect.y === modelData.y) ? 2 : 0
+                                       && root.searchController.currentRect.y === modelData.y) ? 2 : 1
                     }
                 }
 
@@ -193,6 +193,21 @@ Item {
                     cursorShape: Qt.IBeamCursor
                     preventStealing: true
                     propagateComposedEvents: false
+
+                    function _updateSelectionLive() {
+                        if (!root.document) return
+                        if (rubberband.width < 2 || rubberband.height < 2) return
+                        const rectPts = Qt.rect(rubberband.x / pageItem.pxPerPt,
+                                                rubberband.y / pageItem.pxPerPt,
+                                                rubberband.width  / pageItem.pxPerPt,
+                                                rubberband.height / pageItem.pxPerPt)
+                        const wordRects = root.document.selectionRects(index, rectPts)
+                        const m = root._selectionByPage
+                        m[index] = wordRects
+                        root._selectionByPage = m
+                        root._selectionRev++
+                    }
+
                     onPressed: (m) => {
                         startPt = Qt.point(m.x, m.y)
                         rubberband = Qt.rect(m.x, m.y, 0, 0)
@@ -204,6 +219,7 @@ Item {
                                              Math.min(startPt.y, m.y),
                                              Math.abs(m.x - startPt.x),
                                              Math.abs(m.y - startPt.y))
+                        _updateSelectionLive()
                     }
                     onReleased: {
                         if (rubberband.width < 3 || rubberband.height < 3) {
@@ -214,13 +230,11 @@ Item {
                                                 rubberband.width  / pageItem.pxPerPt,
                                                 rubberband.height / pageItem.pxPerPt)
                         if (root.document) {
-                            // Word-level highlight rects (persistent overlay)
                             const wordRects = root.document.selectionRects(index, rectPts)
                             const m = root._selectionByPage
                             m[index] = wordRects
                             root._selectionByPage = m
                             root._selectionRev++
-                            // Copy text spanning drag rect
                             const txt = root.document.textInRect(index, rectPts)
                             if (txt.length > 0 && typeof clipboard !== "undefined") {
                                 clipboard.setText(txt)
@@ -230,13 +244,7 @@ Item {
                     }
                 }
 
-                Rectangle {
-                    visible: selArea.rubberband.width > 0
-                    x: selArea.rubberband.x; y: selArea.rubberband.y
-                    width: selArea.rubberband.width; height: selArea.rubberband.height
-                    color: Theme.accent; opacity: 0.25
-                    border.color: Theme.accent; border.width: 1
-                }
+                // Rubberband hidden — live word-level selection replaces it
 
                 BusyIndicator {
                     anchors.centerIn: parent
