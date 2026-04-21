@@ -149,7 +149,7 @@ Item {
                         root.searchController.revision
                         return root.searchController.matchesOnPage(index)
                     }
-                    delegate: Rectangle {
+                    delegate: Item {
                         id: matchRect
                         required property var modelData
                         x: modelData.x * pageItem.pxPerPt
@@ -157,17 +157,33 @@ Item {
                         width:  modelData.width  * pageItem.pxPerPt
                         height: modelData.height * pageItem.pxPerPt
                         visible: width > 0 && height > 0
-                        radius: Math.min(4, height / 3)
-                        antialiasing: true
-                        color: {
+
+                        readonly property bool isCurrent: {
                             root._searchRev
                             return (root.searchController
                                     && root.searchController.currentPage === index
                                     && root.searchController.currentRect.x === modelData.x
                                     && root.searchController.currentRect.y === modelData.y)
-                                   ? "#fab005" : "#f9e2af"
                         }
-                        opacity: 0.55
+
+                        ShaderEffectSource {
+                            id: matchSrc
+                            anchors.fill: parent
+                            live: true
+                            hideSource: false
+                            sourceItem: root.invertColors ? invertedPage : img
+                            sourceRect: Qt.rect(matchRect.x, matchRect.y,
+                                                matchRect.width, matchRect.height)
+                        }
+                        ShaderEffect {
+                            anchors.fill: parent
+                            property variant src: matchSrc
+                            property color tintColor: matchRect.isCurrent ? "#f59e0b" : "#fde68a"
+                            property vector2d boxSize: Qt.vector2d(matchRect.width, matchRect.height)
+                            property real boxRadius: Math.min(4, matchRect.height / 3)
+                            property real tintStrength: matchRect.isCurrent ? 0.85 : 0.7
+                            fragmentShader: "qrc:/HyprPDF/qml/shaders/highlight_under_text.frag.qsb"
+                        }
                     }
                 }
 
@@ -178,14 +194,33 @@ Item {
                         const m = root._selectionByPage
                         return (m && m[index]) ? m[index] : []
                     }
-                    delegate: Rectangle {
+                    delegate: Item {
+                        id: selRect
                         required property var modelData
                         x: modelData.x * pageItem.pxPerPt
                         y: modelData.y * pageItem.pxPerPt
                         width:  modelData.width  * pageItem.pxPerPt
                         height: modelData.height * pageItem.pxPerPt
-                        color: Theme.accent
-                        opacity: 0.35
+                        visible: width > 0 && height > 0
+
+                        ShaderEffectSource {
+                            id: selSrc
+                            anchors.fill: parent
+                            live: true
+                            hideSource: false
+                            sourceItem: root.invertColors ? invertedPage : img
+                            sourceRect: Qt.rect(selRect.x, selRect.y,
+                                                selRect.width, selRect.height)
+                        }
+                        ShaderEffect {
+                            anchors.fill: parent
+                            property variant src: selSrc
+                            property color tintColor: Theme.accent
+                            property vector2d boxSize: Qt.vector2d(selRect.width, selRect.height)
+                            property real boxRadius: Math.min(3, selRect.height / 4)
+                            property real tintStrength: 0.55
+                            fragmentShader: "qrc:/HyprPDF/qml/shaders/highlight_under_text.frag.qsb"
+                        }
                     }
                 }
 
