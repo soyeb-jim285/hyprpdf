@@ -20,6 +20,9 @@ void SearchController::setDocument(QObject *doc) {
 }
 
 void SearchController::search(const QString &q) {
+    qDebug() << "SearchController::search q=" << q
+             << "doc=" << (m_doc ? "ok" : "null")
+             << "pages=" << (m_doc ? m_doc->pageCount() : 0);
     m_query = q;
     emit queryChanged();
     m_matches.clear();
@@ -35,6 +38,7 @@ void SearchController::search(const QString &q) {
             m_matches.push_back({p, v.toRectF()});
         }
     }
+    qDebug() << "SearchController::search found" << m_matches.size() << "matches";
     if (!m_matches.isEmpty()) m_current = 0;
     emit resultsChanged();
     emitCurrent();

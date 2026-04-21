@@ -28,7 +28,11 @@ Rectangle {
     Timer {
         id: debounce
         interval: 150
-        onTriggered: if (root.controller) root.controller.search(field.text)
+        onTriggered: {
+            console.log("SearchBar: debounce fire text='" + field.text
+                        + "' controller=" + (root.controller !== null))
+            if (root.controller) root.controller.search(field.text)
+        }
     }
 
     RowLayout {
@@ -42,7 +46,10 @@ Rectangle {
             placeholderText: "Find in document"
             color: Theme.text
             background: Rectangle { color: "transparent" }
-            onTextEdited: debounce.restart()
+            onTextEdited: {
+                console.log("SearchBar: textEdited '" + text + "'")
+                debounce.restart()
+            }
             Keys.onReturnPressed: if (root.controller) root.controller.next()
             Keys.onEscapePressed: { root.visible = false; root.closed() }
         }
