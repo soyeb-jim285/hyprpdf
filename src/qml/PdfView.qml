@@ -11,12 +11,24 @@ Item {
     property bool invertColors: false
     property var  searchController: null
 
+    // Per-page selection rects (word bboxes in PDF points), keyed by page index.
+    // Cleared on new drag press. Drawn as persistent highlight overlay.
+    property var _selectionByPage: ({})
+    property int _selectionRev: 0
+    function _clearSelection() {
+        _selectionByPage = ({})
+        _selectionRev++
+    }
+
     // Increments on every resultsChanged — forces Repeater model to re-evaluate
     property int _searchRev: 0
     Connections {
         target: root.searchController
         enabled: root.searchController !== null
-        function onResultsChanged() { root._searchRev++ }
+        function onResultsChanged() {
+            console.log("PdfView: resultsChanged matchCount=" + root.searchController.matchCount)
+            root._searchRev++
+        }
         function onCurrentChanged() { root._searchRev++ }
     }
 
@@ -120,14 +132,26 @@ Item {
 
                 Repeater {
                     id: matchRepeater
-                    // Comma expr reads _searchRev first to establish QML dep,
-                    // then returns the fresh matches list on every increment.
-                    model: (root._searchRev,
-                            root.searchController
-                            ? root.searchController.matchesOnPage(index)
-                            : [])
+                    model: {
+                        const rev = root._searchRev
+                        const matches = root.searchController
+                                        ? root.searchController.matchesOnPage(index)
+                                        : []
+                        if (matches.length > 0)
+                            console.log("PdfView: page " + index + " rev=" + rev
+                                        + " matches=" + matches.length
+                                        + " first=" + JSON.stringify(matches[0]))
+                        return matches
+                    }
                     delegate: Rectangle {
                         required property var modelData
+                        Component.onCompleted: console.log("match rect: x=" + x + " y=" + y
+                                                            + " w=" + width + " h=" + height
+                                                            + " pxPerPt=" + pageItem.pxPerPt
+                                                            + " mdata.x=" + modelData.x
+                                                            + " mdata.y=" + modelData.y
+                                                            + " mdata.w=" + modelData.width
+                                                            + " mdata.h=" + modelData.height)
                         x: modelData.x * pageItem.pxPerPt
                         y: modelData.y * pageItem.pxPerPt
                         width:  modelData.width  * pageItem.pxPerPt
@@ -142,6 +166,24 @@ Item {
                     }
                 }
 
+                // Persistent selection highlight overlay (word-level bboxes).
+                Repeater {
+                    model: {
+                        const rev = root._selectionRev
+                        const m = root._selectionByPage
+                        return (m && m[index]) ? m[index] : []
+                    }
+                    delegate: Rectangle {
+                        required property var modelData
+                        x: modelData.x * pageItem.pxPerPt
+                        y: modelData.y * pageItem.pxPerPt
+                        width:  modelData.width  * pageItem.pxPerPt
+                        height: modelData.height * pageItem.pxPerPt
+                        color: Theme.accent
+                        opacity: 0.35
+                    }
+                }
+
                 MouseArea {
                     id: selArea
                     anchors.fill: parent
@@ -149,13 +191,12 @@ Item {
                     property rect  rubberband
                     acceptedButtons: Qt.LeftButton
                     cursorShape: Qt.IBeamCursor
-                    // Stop ListView from stealing drag as a scroll gesture
                     preventStealing: true
                     propagateComposedEvents: false
                     onPressed: (m) => {
                         startPt = Qt.point(m.x, m.y)
                         rubberband = Qt.rect(m.x, m.y, 0, 0)
-                        console.log("PdfView: press page", index, "at", m.x, m.y)
+                        root._clearSelection()
                     }
                     onPositionChanged: (m) => {
                         if (!pressed) return
@@ -165,8 +206,6 @@ Item {
                                              Math.abs(m.y - startPt.y))
                     }
                     onReleased: {
-                        console.log("PdfView: release rubberband",
-                                    rubberband.width, "x", rubberband.height)
                         if (rubberband.width < 3 || rubberband.height < 3) {
                             rubberband = Qt.rect(0, 0, 0, 0); return
                         }
@@ -174,13 +213,18 @@ Item {
                                                 rubberband.y / pageItem.pxPerPt,
                                                 rubberband.width  / pageItem.pxPerPt,
                                                 rubberband.height / pageItem.pxPerPt)
-                        const txt = root.document
-                                    ? root.document.textInRect(index, rectPts) : ""
-                        console.log("PdfView: textInRect returned len=" + txt.length)
-                        if (txt.length > 0 && typeof clipboard !== "undefined") {
-                            clipboard.setText(txt)
-                            console.log("PdfView: copied to clipboard:",
-                                        txt.substring(0, Math.min(80, txt.length)))
+                        if (root.document) {
+                            // Word-level highlight rects (persistent overlay)
+                            const wordRects = root.document.selectionRects(index, rectPts)
+                            const m = root._selectionByPage
+                            m[index] = wordRects
+                            root._selectionByPage = m
+                            root._selectionRev++
+                            // Copy text spanning drag rect
+                            const txt = root.document.textInRect(index, rectPts)
+                            if (txt.length > 0 && typeof clipboard !== "undefined") {
+                                clipboard.setText(txt)
+                            }
                         }
                         rubberband = Qt.rect(0, 0, 0, 0)
                     }

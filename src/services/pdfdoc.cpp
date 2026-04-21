@@ -81,6 +81,36 @@ QString PdfDoc::textInRect(int page, const QRectF &rect) const {
     return p->text(rect).trimmed();
 }
 
+QVariantList PdfDoc::selectionRects(int page, const QRectF &rect) const {
+    QVariantList result;
+    if (!m_doc || page < 0 || page >= m_doc->numPages() || rect.isEmpty()) return result;
+    auto p = m_doc->page(page);
+    if (!p) return result;
+    // textList() returns all word boxes on the page (PDF points, top-left origin).
+    auto words = p->textList();
+    // Line-aware selection: any word whose vertical span intersects the
+    // drag's vertical span is considered a candidate; then cull on horizontal
+    // span so top/bottom partial rows only include the horizontally-hit words.
+    const double yTop = rect.top();
+    const double yBot = rect.bottom();
+    const double xLeft = rect.left();
+    const double xRight = rect.right();
+    for (const auto &w : words) {
+        const QRectF bb = w->boundingBox();
+        // Vertical intersect test: word row overlaps drag vertical span
+        if (bb.bottom() < yTop || bb.top() > yBot) continue;
+        // For words fully inside vertical span (mid-rows), keep regardless of x
+        const bool topRow = bb.bottom() >= yTop && bb.top() < yTop;
+        const bool botRow = bb.top() <= yBot && bb.bottom() > yBot;
+        if (topRow || botRow) {
+            // Border row — require horizontal overlap with drag rect
+            if (bb.right() < xLeft || bb.left() > xRight) continue;
+        }
+        result.append(QVariant::fromValue(bb));
+    }
+    return result;
+}
+
 static void buildTocFromOutline(const QVector<Poppler::OutlineItem> &items,
                                 QVector<PdfDoc::TocEntry> &out) {
     for (const auto &item : items) {
