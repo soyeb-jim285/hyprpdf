@@ -11,8 +11,11 @@
 #include "services/configmanager.h"
 #include "services/documentcontroller.h"
 #include "services/pdfpageimageprovider.h"
+#include "services/searchcontroller.h"
+#include "services/clipboardbridge.h"
 #include "models/documentmodel.h"
 #include "models/recentfilesmodel.h"
+#include "models/outlinemodel.h"
 
 int main(int argc, char *argv[]) {
     QGuiApplication app(argc, argv);
@@ -38,6 +41,9 @@ int main(int argc, char *argv[]) {
     auto *recentFiles   = new RecentFilesModel(QString{}, &app);
     auto *documentModel = new DocumentModel(&app);
     auto *documentCtl   = new DocumentController(documentModel, &app);
+    auto *searchController = new SearchController(&app);
+    auto *outlineModel     = new OutlineModel(&app);
+    auto *clipboard        = new ClipboardBridge(&app);
 
     const QString themesDir = QString(HYPRPDF_DATA_DIR) + "/themes";
     theme->loadTheme(config->theme(), themesDir);
@@ -60,6 +66,9 @@ int main(int argc, char *argv[]) {
     ctx->setContextProperty("recentFiles",        recentFiles);
     ctx->setContextProperty("documentModel",      documentModel);
     ctx->setContextProperty("documentController", documentCtl);
+    ctx->setContextProperty("searchController", searchController);
+    ctx->setContextProperty("outlineModel",     outlineModel);
+    ctx->setContextProperty("clipboard",        clipboard);
 
     QObject::connect(recentFiles, &RecentFilesModel::requestOpen,
                      documentCtl, &DocumentController::open);

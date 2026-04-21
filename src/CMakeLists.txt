@@ -5,8 +5,11 @@ qt_add_executable(hyprpdf
     services/documentcontroller.cpp
     services/pdfdoc.cpp
     services/pdfpageimageprovider.cpp
+    services/searchcontroller.cpp
+    services/clipboardbridge.cpp
     models/documentmodel.cpp
     models/recentfilesmodel.cpp
+    models/outlinemodel.cpp
 )
 
 target_link_libraries(hyprpdf PRIVATE
@@ -36,6 +39,10 @@ qt_add_qml_module(hyprpdf
         qml/Toolbar.qml
         qml/TabsBar.qml
         qml/RecentFilesView.qml
+        # v0.2 panels — uncommented in Task 7/8:
+        # qml/ThumbnailList.qml
+        # qml/OutlinePanel.qml
+        # qml/SearchBar.qml
         qml/icons/IconFolder.qml
         qml/icons/IconZoomIn.qml
         qml/icons/IconZoomOut.qml
@@ -46,6 +53,13 @@ qt_add_qml_module(hyprpdf
         qml/icons/IconFileText.qml
         qml/icons/IconLayoutGrid.qml
         qml/icons/IconBookOpen.qml
+        qml/icons/IconChevronUp.qml
+        qml/icons/IconChevronDown.qml
+        qml/icons/IconPanelLeft.qml
+        qml/icons/IconPanelTop.qml
+        qml/icons/IconSearch.qml
+        qml/icons/IconMoon.qml
+        qml/icons/IconSun.qml
     RESOURCE_PREFIX /
 )
 
