@@ -110,7 +110,10 @@ Item {
                 }
 
                 Repeater {
-                    model: root.searchController
+                    id: matchRepeater
+                    // Reactive trigger: reading matchCount creates QML dep on Q_PROPERTY
+                    // with NOTIFY resultsChanged, so binding re-evaluates when search runs.
+                    model: (root.searchController && root.searchController.matchCount >= 0)
                            ? root.searchController.matchesOnPage(index)
                            : []
                     delegate: Rectangle {
@@ -123,7 +126,9 @@ Item {
                         opacity: 0.35
                         border.color: Theme.warning
                         border.width: (root.searchController
-                                       && root.searchController.currentPage === index) ? 1 : 0
+                                       && root.searchController.currentPage === index
+                                       && root.searchController.currentRect.x === modelData.x
+                                       && root.searchController.currentRect.y === modelData.y) ? 2 : 0
                     }
                 }
 
