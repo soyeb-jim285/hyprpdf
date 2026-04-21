@@ -22,15 +22,26 @@ Item {
 
     // Increments on every resultsChanged — forces Repeater model to re-evaluate
     property int _searchRev: 0
-    Connections {
-        target: root.searchController
-        enabled: root.searchController !== null
-        function onResultsChanged() {
-            console.log("PdfView: resultsChanged matchCount=" + root.searchController.matchCount)
+
+    // Manual signal wiring in addition to Connections — the declarative Connections
+    // inside per-tab PdfView instances was silently not firing.
+    property var _wiredController: null
+    function _wireController() {
+        if (_wiredController === root.searchController) return
+        _wiredController = root.searchController
+        if (!_wiredController) return
+        console.log("PdfView: wiring SearchController signals")
+        _wiredController.resultsChanged.connect(function () {
+            console.log("PdfView: resultsChanged matchCount="
+                        + root.searchController.matchCount)
             root._searchRev++
-        }
-        function onCurrentChanged() { root._searchRev++ }
+        })
+        _wiredController.currentChanged.connect(function () {
+            root._searchRev++
+        })
     }
+    Component.onCompleted: _wireController()
+    onSearchControllerChanged: _wireController()
 
     function zoomIn()   { zoom *= 1.2 }
     function zoomOut()  { zoom /= 1.2 }
