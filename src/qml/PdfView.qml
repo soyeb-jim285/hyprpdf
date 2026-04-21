@@ -182,7 +182,7 @@ Item {
                             property color tintColor: matchRect.isCurrent ? "#f59e0b" : "#fde68a"
                             property vector2d boxSize: Qt.vector2d(matchRect.width, matchRect.height)
                             property real boxRadius: Math.min(4, matchRect.height / 3)
-                            property real tintStrength: matchRect.isCurrent ? 0.85 : 0.7
+                            property real tintStrength: 0.85
                             fragmentShader: "qrc:/HyprPDF/qml/shaders/highlight_under_text.frag.qsb"
                         }
                     }
