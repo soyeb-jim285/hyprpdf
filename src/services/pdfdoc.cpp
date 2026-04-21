@@ -70,7 +70,7 @@ QVariantList PdfDoc::search(int page, const QString &text) const {
     auto p = m_doc->page(page);
     if (!p) return result;
     auto rects = p->search(text, Poppler::Page::IgnoreCase);
-    for (const auto &r : rects) result.append(QVariant::fromValue(r));
+    for (const auto &r : rects) result.append(QVariant::fromValue(r.normalized()));
     return result;
 }
 
@@ -79,6 +79,74 @@ QString PdfDoc::textInRect(int page, const QRectF &rect) const {
     auto p = m_doc->page(page);
     if (!p) return {};
     return p->text(rect).trimmed();
+}
+
+QVariantList PdfDoc::selectionRectsLine(int page, qreal sx, qreal sy,
+                                         qreal ex, qreal ey) const {
+    QVariantList result;
+    if (!m_doc || page < 0 || page >= m_doc->numPages()) return result;
+    auto p = m_doc->page(page);
+    if (!p) return result;
+    auto words = p->textList();
+    if (words.empty()) return result;
+
+    struct Info { QRectF bb; int line; };
+    std::vector<Info> info;
+    info.reserve(words.size());
+    double avgH = 0;
+    for (const auto &w : words) {
+        info.push_back({w->boundingBox(), -1});
+        avgH += info.back().bb.height();
+    }
+    avgH /= std::max<size_t>(1, info.size());
+    const double lineTol = avgH * 0.5;
+
+    std::sort(info.begin(), info.end(), [](const Info &a, const Info &b) {
+        return a.bb.center().y() < b.bb.center().y();
+    });
+    int curLine = 0;
+    double curY = info.front().bb.center().y();
+    for (auto &w : info) {
+        const double y = w.bb.center().y();
+        if (std::abs(y - curY) > lineTol) {
+            ++curLine;
+            curY = y;
+        }
+        w.line = curLine;
+    }
+
+    // Order endpoints by y (reading order). If same line, by x.
+    auto pointLine = [&](double y) -> int {
+        // Return line index whose vertical span best contains y
+        for (const auto &w : info) {
+            if (w.bb.top() <= y && w.bb.bottom() >= y) return w.line;
+        }
+        // Clamp
+        if (y <= info.front().bb.top()) return info.front().line;
+        return info.back().line;
+    };
+    int lineS = pointLine(sy);
+    int lineE = pointLine(ey);
+    if (lineS > lineE || (lineS == lineE && sx > ex)) {
+        std::swap(sx, ex);
+        std::swap(sy, ey);
+        std::swap(lineS, lineE);
+    }
+
+    for (const auto &w : info) {
+        if (w.line < lineS || w.line > lineE) continue;
+        if (lineS == lineE) {
+            const double lo = std::min(sx, ex), hi = std::max(sx, ex);
+            if (w.bb.right() < lo || w.bb.left() > hi) continue;
+        } else if (w.line == lineS) {
+            if (w.bb.right() < sx) continue;
+        } else if (w.line == lineE) {
+            if (w.bb.left() > ex) continue;
+        }
+        // middle line: include all words
+        result.append(QVariant::fromValue(w.bb));
+    }
+    return result;
 }
 
 QVariantList PdfDoc::selectionRects(int page, const QRectF &rect) const {

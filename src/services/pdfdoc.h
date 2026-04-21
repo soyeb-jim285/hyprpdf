@@ -44,9 +44,14 @@ public:
     Q_INVOKABLE QVariantList search(int page, const QString &text) const;
     Q_INVOKABLE QString textInRect(int page, const QRectF &rect) const;
     // Word-level bounding rects (PDF points) that intersect the rect.
-    // Lines are expanded: any word whose row overlaps the drag vertical
-    // span is included in full, Okular-style line-aware selection.
     Q_INVOKABLE QVariantList selectionRects(int page, const QRectF &rect) const;
+    // Text-editor-style line-aware selection from start point to end point
+    // (both in PDF points). Returns word bboxes from start through end in
+    // reading order; start line: words to the right of startX; middle lines:
+    // every word; end line: words to the left of endX.
+    Q_INVOKABLE QVariantList selectionRectsLine(int page,
+                                                qreal sx, qreal sy,
+                                                qreal ex, qreal ey) const;
     const QVector<TocEntry> &toc() const;
 
 private:

@@ -157,6 +157,7 @@ Item {
                         width:  modelData.width  * pageItem.pxPerPt
                         height: modelData.height * pageItem.pxPerPt
                         visible: width > 0 && height > 0
+                        opacity: isCurrent ? 0.70 : 0.50
 
                         readonly property bool isCurrent: {
                             root._searchRev
@@ -202,6 +203,7 @@ Item {
                         width:  modelData.width  * pageItem.pxPerPt
                         height: modelData.height * pageItem.pxPerPt
                         visible: width > 0 && height > 0
+                        opacity: 0.45
 
                         ShaderEffectSource {
                             id: selSrc
@@ -234,14 +236,16 @@ Item {
                     preventStealing: true
                     propagateComposedEvents: false
 
+                    property point endPt
                     function _updateSelectionLive() {
                         if (!root.document) return
                         if (rubberband.width < 2 || rubberband.height < 2) return
-                        const rectPts = Qt.rect(rubberband.x / pageItem.pxPerPt,
-                                                rubberband.y / pageItem.pxPerPt,
-                                                rubberband.width  / pageItem.pxPerPt,
-                                                rubberband.height / pageItem.pxPerPt)
-                        const wordRects = root.document.selectionRects(index, rectPts)
+                        const sxPt = startPt.x / pageItem.pxPerPt
+                        const syPt = startPt.y / pageItem.pxPerPt
+                        const exPt = endPt.x / pageItem.pxPerPt
+                        const eyPt = endPt.y / pageItem.pxPerPt
+                        const wordRects = root.document.selectionRectsLine(
+                                index, sxPt, syPt, exPt, eyPt)
                         const m = root._selectionByPage
                         m[index] = wordRects
                         root._selectionByPage = m
@@ -250,11 +254,13 @@ Item {
 
                     onPressed: (m) => {
                         startPt = Qt.point(m.x, m.y)
+                        endPt = Qt.point(m.x, m.y)
                         rubberband = Qt.rect(m.x, m.y, 0, 0)
                         root._clearSelection()
                     }
                     onPositionChanged: (m) => {
                         if (!pressed) return
+                        endPt = Qt.point(m.x, m.y)
                         rubberband = Qt.rect(Math.min(startPt.x, m.x),
                                              Math.min(startPt.y, m.y),
                                              Math.abs(m.x - startPt.x),
@@ -265,17 +271,23 @@ Item {
                         if (rubberband.width < 3 || rubberband.height < 3) {
                             rubberband = Qt.rect(0, 0, 0, 0); return
                         }
-                        const rectPts = Qt.rect(rubberband.x / pageItem.pxPerPt,
-                                                rubberband.y / pageItem.pxPerPt,
-                                                rubberband.width  / pageItem.pxPerPt,
-                                                rubberband.height / pageItem.pxPerPt)
                         if (root.document) {
-                            const wordRects = root.document.selectionRects(index, rectPts)
+                            const sxPt = startPt.x / pageItem.pxPerPt
+                            const syPt = startPt.y / pageItem.pxPerPt
+                            const exPt = endPt.x / pageItem.pxPerPt
+                            const eyPt = endPt.y / pageItem.pxPerPt
+                            const wordRects = root.document.selectionRectsLine(
+                                    index, sxPt, syPt, exPt, eyPt)
                             const m = root._selectionByPage
                             m[index] = wordRects
                             root._selectionByPage = m
                             root._selectionRev++
-                            const txt = root.document.textInRect(index, rectPts)
+                            // Compose text by joining word.text for each selected word.
+                            // For now use textInRect of the bbox surrounding selection.
+                            let minX = Math.min(sxPt, exPt), maxX = Math.max(sxPt, exPt)
+                            let minY = Math.min(syPt, eyPt), maxY = Math.max(syPt, eyPt)
+                            const bbox = Qt.rect(minX, minY, maxX - minX, maxY - minY)
+                            const txt = root.document.textInRect(index, bbox)
                             if (txt.length > 0 && typeof clipboard !== "undefined") {
                                 clipboard.setText(txt)
                             }
