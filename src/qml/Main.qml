@@ -107,44 +107,26 @@ ApplicationWindow {
     Shortcut { sequence: "PgDown";  onActivated: { var v = curView(); if (v) v.nextPage() } }
     Shortcut { sequence: "PgUp";    onActivated: { var v = curView(); if (v) v.prevPage() } }
 
-    menuBar: MenuBar {
-        Menu {
-            title: "&File"
-            MenuItem { action: actOpen }
-            MenuItem { action: actNewTab }
-            MenuItem { action: actCloseTab }
-            MenuSeparator {}
-            MenuItem { action: actQuit }
-        }
-        Menu {
-            title: "&View"
-            MenuItem { action: actZoomIn }
-            MenuItem { action: actZoomOut }
-            MenuItem { action: actFitWidth }
-            MenuItem { action: actFitPage }
-            MenuSeparator {}
-            MenuItem { action: actInvert }
-            MenuItem { action: actLeft }
-            MenuItem { action: actRight }
-        }
-        Menu {
-            title: "&Find"
-            MenuItem { action: actFind }
-            MenuItem { action: actFindNext }
-            MenuItem { action: actFindPrev }
-        }
-    }
-
     ColumnLayout {
         anchors.fill: parent
         spacing: 0
 
         Toolbar {
             Layout.fillWidth: true
-            onOpenRequested: openDialog.open()
-            onZoomInRequested:  { var v = curView(); if (v) v.zoomIn() }
-            onZoomOutRequested: { var v = curView(); if (v) v.zoomOut() }
-            onFitPageRequested: { var v = curView(); if (v) v.fitPage() }
+            invertOn: root.invertColors
+            leftOn:   root.leftPanelVisible
+            rightOn:  root.rightPanelVisible
+            onOpenRequested:        openDialog.open()
+            onNewTabRequested:      openDialog.open()
+            onCloseTabRequested:    documentController.closeCurrent()
+            onZoomInRequested:      { var v = curView(); if (v) v.zoomIn() }
+            onZoomOutRequested:     { var v = curView(); if (v) v.zoomOut() }
+            onFitWidthRequested:    { var v = curView(); if (v) v.fitWidth() }
+            onFitPageRequested:     { var v = curView(); if (v) v.fitPage() }
+            onSearchRequested:      searchBar.openWithFocus()
+            onInvertToggled:        root.invertColors = !root.invertColors
+            onLeftPanelToggled:     root.leftPanelVisible = !root.leftPanelVisible
+            onRightPanelToggled:    root.rightPanelVisible = !root.rightPanelVisible
         }
         TabsBar {
             Layout.fillWidth: true
