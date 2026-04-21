@@ -157,7 +157,7 @@ Item {
                         width:  modelData.width  * pageItem.pxPerPt
                         height: modelData.height * pageItem.pxPerPt
                         visible: width > 0 && height > 0
-                        opacity: isCurrent ? 0.60 : 0.45
+                        opacity: isCurrent ? 0.60 : 0.50
 
                         readonly property bool isCurrent: {
                             root._searchRev
