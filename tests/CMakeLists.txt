@@ -35,3 +35,5 @@ hyprpdf_test(tst_outlinemodel
     ${CMAKE_SOURCE_DIR}/src/models/outlinemodel.cpp
     ${CMAKE_SOURCE_DIR}/src/services/pdfdoc.cpp)
 target_link_libraries(tst_outlinemodel PRIVATE PkgConfig::POPPLER_QT6)
+
+hyprpdf_test(tst_clipboardbridge ${CMAKE_SOURCE_DIR}/src/services/clipboardbridge.cpp)
