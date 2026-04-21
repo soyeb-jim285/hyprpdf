@@ -28,6 +28,12 @@ target_include_directories(hyprpdf PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 set_source_files_properties(qml/Theme.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 
+find_package(Qt6 COMPONENTS ShaderTools REQUIRED)
+qt6_add_shaders(hyprpdf "hyprpdf_shaders"
+    PREFIX "/HyprPDF/qml/shaders"
+    FILES qml/shaders/invert.frag
+)
+
 qt_add_qml_module(hyprpdf
     URI HyprPDF
     VERSION 1.0

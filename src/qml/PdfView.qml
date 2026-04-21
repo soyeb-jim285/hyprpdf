@@ -100,18 +100,13 @@ Item {
                     visible: !root.invertColors
                 }
 
-                ShaderEffect {
+                Loader {
                     anchors.fill: parent
-                    visible: root.invertColors
-                    property variant src: img
-                    fragmentShader: "
-                        uniform sampler2D src;
-                        uniform lowp float qt_Opacity;
-                        varying highp vec2 qt_TexCoord0;
-                        void main() {
-                            lowp vec4 c = texture2D(src, qt_TexCoord0);
-                            gl_FragColor = vec4(1.0 - c.rgb, c.a) * qt_Opacity;
-                        }"
+                    active: root.invertColors
+                    sourceComponent: ShaderEffect {
+                        property variant src: img
+                        fragmentShader: "qrc:/HyprPDF/qml/shaders/invert.frag.qsb"
+                    }
                 }
 
                 Repeater {

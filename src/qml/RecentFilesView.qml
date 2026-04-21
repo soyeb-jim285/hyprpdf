@@ -41,10 +41,16 @@ Item {
             Layout.fillWidth: true
             Layout.preferredHeight: 360
             model: recentFiles
-            delegate: Q.Card {
+            delegate: Rectangle {
                 width: ListView.view ? ListView.view.width : 400
+                implicitHeight: 64
+                color: cardHover.hovered ? Theme.surface : Theme.mantle
+                border.color: Theme.crust
+                border.width: 1
+                radius: Theme.radiusMedium
                 opacity: model.exists ? 1.0 : 0.55
 
+                HoverHandler { id: cardHover }
                 MouseArea {
                     anchors.fill: parent
                     cursorShape: Qt.PointingHandCursor
@@ -64,9 +70,9 @@ Item {
                         }
                     }
 
-                    Component { id: fileText;   IconFileText   { size: 24; color: Q.Theme.textPrimary } }
-                    Component { id: layoutGrid; IconLayoutGrid { size: 24; color: Q.Theme.textPrimary } }
-                    Component { id: bookOpen;   IconBookOpen   { size: 24; color: Q.Theme.textPrimary } }
+                    Component { id: fileText;   IconFileText   { size: 24; color: Theme.text } }
+                    Component { id: layoutGrid; IconLayoutGrid { size: 24; color: Theme.text } }
+                    Component { id: bookOpen;   IconBookOpen   { size: 24; color: Theme.text } }
 
                     ColumnLayout {
                         Layout.fillWidth: true
