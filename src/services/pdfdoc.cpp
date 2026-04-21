@@ -90,40 +90,54 @@ QVariantList PdfDoc::selectionRectsLine(int page, qreal sx, qreal sy,
     auto words = p->textList();
     if (words.empty()) return result;
 
-    struct Info { QRectF bb; int line; };
-    std::vector<Info> info;
-    info.reserve(words.size());
-    double avgH = 0;
+    // Flatten to character-level bboxes so selection can split words.
+    struct Glyph { QRectF bb; int line = -1; };
+    std::vector<Glyph> glyphs;
+    glyphs.reserve(words.size() * 6);
     for (const auto &w : words) {
-        info.push_back({w->boundingBox(), -1});
-        avgH += info.back().bb.height();
+        const QRectF wordBB = w->boundingBox();
+        const int n = static_cast<int>(w->text().size());
+        if (n <= 0) { glyphs.push_back({wordBB}); continue; }
+        bool anyChar = false;
+        for (int i = 0; i < n; ++i) {
+            const QRectF cbb = w->charBoundingBox(i);
+            if (cbb.isValid() && !cbb.isEmpty()) {
+                glyphs.push_back({cbb});
+                anyChar = true;
+            }
+        }
+        if (!anyChar) glyphs.push_back({wordBB});
     }
-    avgH /= std::max<size_t>(1, info.size());
-    const double lineTol = avgH * 0.5;
+    if (glyphs.empty()) return result;
 
-    std::sort(info.begin(), info.end(), [](const Info &a, const Info &b) {
-        return a.bb.center().y() < b.bb.center().y();
+    // Cluster by y-center into lines.
+    double avgH = 0;
+    for (const auto &g : glyphs) avgH += g.bb.height();
+    avgH /= std::max<size_t>(1, glyphs.size());
+    const double lineTol = std::max(1.0, avgH * 0.5);
+
+    std::sort(glyphs.begin(), glyphs.end(), [](const Glyph &a, const Glyph &b) {
+        const double ay = a.bb.center().y(), by = b.bb.center().y();
+        if (std::abs(ay - by) < 0.001) return a.bb.left() < b.bb.left();
+        return ay < by;
     });
     int curLine = 0;
-    double curY = info.front().bb.center().y();
-    for (auto &w : info) {
-        const double y = w.bb.center().y();
+    double curY = glyphs.front().bb.center().y();
+    for (auto &g : glyphs) {
+        const double y = g.bb.center().y();
         if (std::abs(y - curY) > lineTol) {
             ++curLine;
             curY = y;
         }
-        w.line = curLine;
+        g.line = curLine;
     }
 
-    // Order endpoints by y (reading order). If same line, by x.
     auto pointLine = [&](double y) -> int {
-        // Return line index whose vertical span best contains y
-        for (const auto &w : info) {
-            if (w.bb.top() <= y && w.bb.bottom() >= y) return w.line;
+        for (const auto &g : glyphs) {
+            if (g.bb.top() <= y && g.bb.bottom() >= y) return g.line;
         }
-        // Clamp
-        if (y <= info.front().bb.top()) return info.front().line;
-        return info.back().line;
+        if (y <= glyphs.front().bb.top()) return glyphs.front().line;
+        return glyphs.back().line;
     };
     int lineS = pointLine(sy);
     int lineE = pointLine(ey);
@@ -133,18 +147,29 @@ QVariantList PdfDoc::selectionRectsLine(int page, qreal sx, qreal sy,
         std::swap(lineS, lineE);
     }
 
-    for (const auto &w : info) {
-        if (w.line < lineS || w.line > lineE) continue;
+    // Collect selected glyphs then union per-line into one rect per line span.
+    std::vector<QRectF> unionPerLine(curLine + 1);
+    std::vector<bool> lineHasSel(curLine + 1, false);
+    for (const auto &g : glyphs) {
+        if (g.line < lineS || g.line > lineE) continue;
+        const double cx = g.bb.center().x();
         if (lineS == lineE) {
             const double lo = std::min(sx, ex), hi = std::max(sx, ex);
-            if (w.bb.right() < lo || w.bb.left() > hi) continue;
-        } else if (w.line == lineS) {
-            if (w.bb.right() < sx) continue;
-        } else if (w.line == lineE) {
-            if (w.bb.left() > ex) continue;
+            if (cx < lo || cx > hi) continue;
+        } else if (g.line == lineS) {
+            if (cx < sx) continue;
+        } else if (g.line == lineE) {
+            if (cx > ex) continue;
         }
-        // middle line: include all words
-        result.append(QVariant::fromValue(w.bb));
+        if (!lineHasSel[g.line]) {
+            unionPerLine[g.line] = g.bb;
+            lineHasSel[g.line] = true;
+        } else {
+            unionPerLine[g.line] = unionPerLine[g.line].united(g.bb);
+        }
+    }
+    for (int i = lineS; i <= lineE; ++i) {
+        if (lineHasSel[i]) result.append(QVariant::fromValue(unionPerLine[i]));
     }
     return result;
 }
