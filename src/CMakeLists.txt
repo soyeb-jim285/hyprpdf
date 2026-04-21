@@ -40,7 +40,7 @@ qt_add_qml_module(hyprpdf
         qml/TabsBar.qml
         qml/RecentFilesView.qml
         # v0.2 panels — uncommented in Task 7/8:
-        # qml/ThumbnailList.qml
+        qml/ThumbnailList.qml
         # qml/OutlinePanel.qml
         # qml/SearchBar.qml
         qml/icons/IconFolder.qml
