@@ -28,7 +28,7 @@ void SearchController::search(const QString &q) {
     m_matches.clear();
     m_current = -1;
     if (!m_doc || q.isEmpty()) {
-        emit resultsChanged();
+        ++m_revision; emit resultsChanged();
         emit currentChanged();
         return;
     }
@@ -40,7 +40,7 @@ void SearchController::search(const QString &q) {
     }
     qDebug() << "SearchController::search found" << m_matches.size() << "matches";
     if (!m_matches.isEmpty()) m_current = 0;
-    emit resultsChanged();
+    ++m_revision; emit resultsChanged();
     emitCurrent();
 }
 
@@ -62,7 +62,7 @@ void SearchController::clear() {
     m_matches.clear();
     m_current = -1;
     emit queryChanged();
-    emit resultsChanged();
+    ++m_revision; emit resultsChanged();
     emit currentChanged();
 }
 

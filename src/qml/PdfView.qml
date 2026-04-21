@@ -144,10 +144,10 @@ Item {
                 Repeater {
                     id: matchRepeater
                     model: {
-                        const rev = root._searchRev
-                        const matches = root.searchController
-                                        ? root.searchController.matchesOnPage(index)
-                                        : []
+                        if (!root.searchController) return []
+                        // Read revision Q_PROPERTY first — QML tracks NOTIFY dep.
+                        const rev = root.searchController.revision
+                        const matches = root.searchController.matchesOnPage(index)
                         if (matches.length > 0)
                             console.log("PdfView: page " + index + " rev=" + rev
                                         + " matches=" + matches.length
