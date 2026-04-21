@@ -30,10 +30,7 @@ Item {
         if (_wiredController === root.searchController) return
         _wiredController = root.searchController
         if (!_wiredController) return
-        console.log("PdfView: wiring SearchController signals")
         _wiredController.resultsChanged.connect(function () {
-            console.log("PdfView: resultsChanged matchCount="
-                        + root.searchController.matchCount)
             root._searchRev++
         })
         _wiredController.currentChanged.connect(function () {
@@ -133,6 +130,7 @@ Item {
                 }
 
                 Loader {
+                    id: invertedPage
                     anchors.fill: parent
                     active: root.invertColors
                     sourceComponent: ShaderEffect {
@@ -144,36 +142,52 @@ Item {
                 Repeater {
                     id: matchRepeater
                     model: {
+                        root._searchRev
                         if (!root.searchController) return []
-                        // Read revision Q_PROPERTY first — QML tracks NOTIFY dep.
-                        const rev = root.searchController.revision
-                        const matches = root.searchController.matchesOnPage(index)
-                        if (matches.length > 0)
-                            console.log("PdfView: page " + index + " rev=" + rev
-                                        + " matches=" + matches.length
-                                        + " first=" + JSON.stringify(matches[0]))
-                        return matches
+                        // Force the binding through a local QML property because the
+                        // shared SearchController QObject is passed around as `var`.
+                        root.searchController.revision
+                        return root.searchController.matchesOnPage(index)
                     }
                     delegate: Rectangle {
+                        id: matchRect
                         required property var modelData
-                        Component.onCompleted: console.log("match rect: x=" + x + " y=" + y
-                                                            + " w=" + width + " h=" + height
-                                                            + " pxPerPt=" + pageItem.pxPerPt
-                                                            + " mdata.x=" + modelData.x
-                                                            + " mdata.y=" + modelData.y
-                                                            + " mdata.w=" + modelData.width
-                                                            + " mdata.h=" + modelData.height)
                         x: modelData.x * pageItem.pxPerPt
                         y: modelData.y * pageItem.pxPerPt
                         width:  modelData.width  * pageItem.pxPerPt
                         height: modelData.height * pageItem.pxPerPt
-                        color: "#f9e2af"
-                        opacity: 0.55
-                        border.color: "#d4a72c"
-                        border.width: (root.searchController
-                                       && root.searchController.currentPage === index
-                                       && root.searchController.currentRect.x === modelData.x
-                                       && root.searchController.currentRect.y === modelData.y) ? 2 : 1
+                        visible: width > 0 && height > 0
+                        radius: Math.min(4, Math.max(2, height / 3))
+                        color: "transparent"
+                        clip: true
+                        layer.enabled: true
+                        layer.smooth: true
+
+                        ShaderEffectSource {
+                            id: matchSource
+                            anchors.fill: parent
+                            live: true
+                            hideSource: false
+                            sourceItem: root.invertColors ? invertedPage : img
+                            sourceRect: Qt.rect(matchRect.x, matchRect.y,
+                                                matchRect.width, matchRect.height)
+                        }
+
+                        // Recolor the page crop itself so the highlight reads like it
+                        // sits behind dark text instead of tinting over it.
+                        ShaderEffect {
+                            anchors.fill: parent
+                            property variant src: matchSource
+                            property color highlightColor: {
+                                root._searchRev
+                                return (root.searchController
+                                        && root.searchController.currentPage === index
+                                        && root.searchController.currentRect.x === modelData.x
+                                        && root.searchController.currentRect.y === modelData.y)
+                                       ? "#fab005" : "#f9e2af"
+                            }
+                            fragmentShader: "qrc:/HyprPDF/qml/shaders/highlight_under_text.frag.qsb"
+                        }
                     }
                 }
 
