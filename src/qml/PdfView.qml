@@ -11,6 +11,15 @@ Item {
     property bool invertColors: false
     property var  searchController: null
 
+    // Increments on every resultsChanged — forces Repeater model to re-evaluate
+    property int _searchRev: 0
+    Connections {
+        target: root.searchController
+        enabled: root.searchController !== null
+        function onResultsChanged() { root._searchRev++ }
+        function onCurrentChanged() { root._searchRev++ }
+    }
+
     function zoomIn()   { zoom *= 1.2 }
     function zoomOut()  { zoom /= 1.2 }
     function fitWidth() {
@@ -111,11 +120,12 @@ Item {
 
                 Repeater {
                     id: matchRepeater
-                    // Reactive trigger: reading matchCount creates QML dep on Q_PROPERTY
-                    // with NOTIFY resultsChanged, so binding re-evaluates when search runs.
-                    model: (root.searchController && root.searchController.matchCount >= 0)
-                           ? root.searchController.matchesOnPage(index)
-                           : []
+                    // Comma expr reads _searchRev first to establish QML dep,
+                    // then returns the fresh matches list on every increment.
+                    model: (root._searchRev,
+                            root.searchController
+                            ? root.searchController.matchesOnPage(index)
+                            : [])
                     delegate: Rectangle {
                         required property var modelData
                         x: modelData.x * pageItem.pxPerPt
@@ -139,9 +149,13 @@ Item {
                     property rect  rubberband
                     acceptedButtons: Qt.LeftButton
                     cursorShape: Qt.IBeamCursor
+                    // Stop ListView from stealing drag as a scroll gesture
+                    preventStealing: true
+                    propagateComposedEvents: false
                     onPressed: (m) => {
                         startPt = Qt.point(m.x, m.y)
                         rubberband = Qt.rect(m.x, m.y, 0, 0)
+                        console.log("PdfView: press page", index, "at", m.x, m.y)
                     }
                     onPositionChanged: (m) => {
                         if (!pressed) return
@@ -151,6 +165,8 @@ Item {
                                              Math.abs(m.y - startPt.y))
                     }
                     onReleased: {
+                        console.log("PdfView: release rubberband",
+                                    rubberband.width, "x", rubberband.height)
                         if (rubberband.width < 3 || rubberband.height < 3) {
                             rubberband = Qt.rect(0, 0, 0, 0); return
                         }
@@ -160,8 +176,11 @@ Item {
                                                 rubberband.height / pageItem.pxPerPt)
                         const txt = root.document
                                     ? root.document.textInRect(index, rectPts) : ""
+                        console.log("PdfView: textInRect returned len=" + txt.length)
                         if (txt.length > 0 && typeof clipboard !== "undefined") {
                             clipboard.setText(txt)
+                            console.log("PdfView: copied to clipboard:",
+                                        txt.substring(0, Math.min(80, txt.length)))
                         }
                         rubberband = Qt.rect(0, 0, 0, 0)
                     }
