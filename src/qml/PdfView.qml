@@ -157,37 +157,17 @@ Item {
                         width:  modelData.width  * pageItem.pxPerPt
                         height: modelData.height * pageItem.pxPerPt
                         visible: width > 0 && height > 0
-                        radius: Math.min(4, Math.max(2, height / 3))
-                        color: "transparent"
-                        clip: true
-                        layer.enabled: true
-                        layer.smooth: true
-
-                        ShaderEffectSource {
-                            id: matchSource
-                            anchors.fill: parent
-                            live: true
-                            hideSource: false
-                            sourceItem: root.invertColors ? invertedPage : img
-                            sourceRect: Qt.rect(matchRect.x, matchRect.y,
-                                                matchRect.width, matchRect.height)
+                        radius: Math.min(4, height / 3)
+                        antialiasing: true
+                        color: {
+                            root._searchRev
+                            return (root.searchController
+                                    && root.searchController.currentPage === index
+                                    && root.searchController.currentRect.x === modelData.x
+                                    && root.searchController.currentRect.y === modelData.y)
+                                   ? "#fab005" : "#f9e2af"
                         }
-
-                        // Recolor the page crop itself so the highlight reads like it
-                        // sits behind dark text instead of tinting over it.
-                        ShaderEffect {
-                            anchors.fill: parent
-                            property variant src: matchSource
-                            property color highlightColor: {
-                                root._searchRev
-                                return (root.searchController
-                                        && root.searchController.currentPage === index
-                                        && root.searchController.currentRect.x === modelData.x
-                                        && root.searchController.currentRect.y === modelData.y)
-                                       ? "#fab005" : "#f9e2af"
-                            }
-                            fragmentShader: "qrc:/HyprPDF/qml/shaders/highlight_under_text.frag.qsb"
-                        }
+                        opacity: 0.55
                     }
                 }
 
