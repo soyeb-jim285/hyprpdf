@@ -8,6 +8,7 @@ qt_add_executable(hyprpdf
     services/searchcontroller.cpp
     services/clipboardbridge.cpp
     services/documenthasher.cpp
+    services/annotationstore.cpp
     models/documentmodel.cpp
     models/recentfilesmodel.cpp
     models/outlinemodel.cpp

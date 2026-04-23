@@ -13,6 +13,9 @@
 #include "services/pdfpageimageprovider.h"
 #include "services/searchcontroller.h"
 #include "services/clipboardbridge.h"
+#include "services/documenthasher.h"
+#include "services/annotationstore.h"
+#include "services/pdfdoc.h"
 #include "models/documentmodel.h"
 #include "models/recentfilesmodel.h"
 #include "models/outlinemodel.h"
@@ -44,6 +47,8 @@ int main(int argc, char *argv[]) {
     auto *searchController = new SearchController(&app);
     auto *outlineModel     = new OutlineModel(&app);
     auto *clipboard        = new ClipboardBridge(&app);
+    auto *annotationStore  = new AnnotationStore(&app);
+    auto *documentHasher   = new DocumentHasher(&app);
 
     const QString themesDir = QString(HYPRPDF_DATA_DIR) + "/themes";
     theme->loadTheme(config->theme(), themesDir);
@@ -69,6 +74,19 @@ int main(int argc, char *argv[]) {
     ctx->setContextProperty("searchController", searchController);
     ctx->setContextProperty("outlineModel",     outlineModel);
     ctx->setContextProperty("clipboard",        clipboard);
+    ctx->setContextProperty("annotationStore",  annotationStore);
+    ctx->setContextProperty("documentHasher",   documentHasher);
+
+    QObject::connect(documentModel, &DocumentModel::currentIndexChanged,
+                     annotationStore, [annotationStore, documentModel]() {
+        const int cur = documentModel->currentIndex();
+        if (cur < 0) { annotationStore->clear(); return; }
+        const auto idx = documentModel->index(cur, 0);
+        const auto doc = idx.data(DocumentModel::DocumentRole).value<QObject*>();
+        auto *pdf = qobject_cast<PdfDoc*>(doc);
+        const QString hash = pdf ? pdf->contentHash() : QString();
+        annotationStore->loadDocument(hash);
+    });
 
     QObject::connect(recentFiles, &RecentFilesModel::requestOpen,
                      documentCtl, &DocumentController::open);
