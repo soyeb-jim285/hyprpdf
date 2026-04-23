@@ -17,12 +17,14 @@ Item {
         delegate: Loader {
             required property var modelData
             sourceComponent: {
+                if (!modelData) return null
                 switch (modelData.type) {
                     case 0: return highlightC
                     case 1: return underlineC
                     case 2: return strikeoutC
                     case 3: return stickyC
                     case 4: return inkC
+                    case 5: return textBoxC
                 }
                 return null
             }
@@ -35,7 +37,7 @@ Item {
         Item {
             property var annot: null
             Repeater {
-                model: annot.rects
+                model: annot ? annot.rects : []
                 delegate: Item {
                     required property var modelData
                     x: modelData.x * root.pxPerPt
@@ -54,7 +56,7 @@ Item {
                     ShaderEffect {
                         anchors.fill: parent
                         property variant src: src
-                        property color tintColor: annot.color
+                        property color tintColor: annot ? annot.color : "#f9e2af"
                         property vector2d boxSize: Qt.vector2d(width, height)
                         property real boxRadius: Math.min(4, height / 3)
                         property real tintStrength: 0.85
@@ -63,6 +65,7 @@ Item {
                     MouseArea {
                         anchors.fill: parent
                         onClicked: (m) => {
+                            if (!annot) return
                             const sp = mapToItem(null, m.x, m.y)
                             root.annotationClicked(annot.id, 0, Qt.point(sp.x, sp.y))
                         }
@@ -77,17 +80,18 @@ Item {
         Item {
             property var annot: null
             Repeater {
-                model: annot.rects
+                model: annot ? annot.rects : []
                 delegate: Rectangle {
                     required property var modelData
                     x: modelData.x * root.pxPerPt
-                    y: (modelData.y + modelData.height - 1.5) * root.pxPerPt
+                    y: (modelData.y + modelData.height) * root.pxPerPt - 2
                     width: modelData.width * root.pxPerPt
-                    height: 1.5
-                    color: annot.color
+                    height: 2
+                    color: annot ? annot.color : "transparent"
                     MouseArea {
                         anchors.fill: parent
                         onClicked: (m) => {
+                            if (!annot) return
                             const sp = mapToItem(null, m.x, m.y)
                             root.annotationClicked(annot.id, 1, Qt.point(sp.x, sp.y))
                         }
@@ -102,17 +106,18 @@ Item {
         Item {
             property var annot: null
             Repeater {
-                model: annot.rects
+                model: annot ? annot.rects : []
                 delegate: Rectangle {
                     required property var modelData
                     x: modelData.x * root.pxPerPt
-                    y: (modelData.y + modelData.height / 2) * root.pxPerPt
+                    y: (modelData.y + modelData.height / 2) * root.pxPerPt - 1
                     width: modelData.width * root.pxPerPt
-                    height: 1.5
-                    color: annot.color
+                    height: 2
+                    color: annot ? annot.color : "transparent"
                     MouseArea {
                         anchors.fill: parent
                         onClicked: (m) => {
+                            if (!annot) return
                             const sp = mapToItem(null, m.x, m.y)
                             root.annotationClicked(annot.id, 2, Qt.point(sp.x, sp.y))
                         }
@@ -126,14 +131,15 @@ Item {
         id: stickyC
         Item {
             property var annot: null
-            x: annot.anchor.x * root.pxPerPt - 12
-            y: annot.anchor.y * root.pxPerPt - 12
+            x: annot ? (annot.anchor.x * root.pxPerPt - 12) : 0
+            y: annot ? (annot.anchor.y * root.pxPerPt - 12) : 0
             width: 24
             height: 24
+            visible: !!annot
             Rectangle {
                 anchors.fill: parent
                 radius: 4
-                color: annot.color
+                color: annot ? annot.color : "transparent"
                 opacity: 0.9
                 border.color: Theme.crust
                 border.width: 1
@@ -141,6 +147,7 @@ Item {
             MouseArea {
                 anchors.fill: parent
                 onClicked: (m) => {
+                    if (!annot) return
                     const sp = mapToItem(null, m.x, m.y)
                     root.annotationClicked(annot.id, 3, Qt.point(sp.x, sp.y))
                 }
@@ -154,20 +161,54 @@ Item {
             property var annot: null
             anchors.fill: parent
             Repeater {
-                model: annot.strokes
+                model: annot ? annot.strokes : []
                 delegate: Shape {
                     required property var modelData
                     anchors.fill: parent
                     preferredRendererType: Shape.CurveRenderer
                     ShapePath {
-                        strokeColor: annot.color
-                        strokeWidth: annot.strokeWidth
+                        strokeColor: annot ? annot.color : "#000000"
+                        strokeWidth: annot ? annot.strokeWidth : 2
                         fillColor: "transparent"
                         capStyle: ShapePath.RoundCap
                         joinStyle: ShapePath.RoundJoin
                         scale: Qt.size(root.pxPerPt, root.pxPerPt)
-                        PathPolyline { path: modelData }
+                        PathPolyline {
+                            path: {
+                                const pts = []
+                                if (!modelData) return pts
+                                for (let i = 0; i < modelData.length; ++i) {
+                                    const p = modelData[i]
+                                    pts.push(Qt.point(p.x, p.y))
+                                }
+                                return pts
+                            }
+                        }
                     }
+                }
+            }
+        }
+    }
+
+    Component {
+        id: textBoxC
+        Item {
+            property var annot: null
+            x: annot ? annot.anchor.x * root.pxPerPt : 0
+            y: annot ? annot.anchor.y * root.pxPerPt : 0
+            visible: !!annot
+            Text {
+                id: label
+                text: annot ? (annot.note || "") : ""
+                color: annot ? annot.color : "#000000"
+                font.pixelSize: annot ? annot.fontSize * root.pxPerPt : 14
+            }
+            MouseArea {
+                anchors.fill: label
+                onClicked: (m) => {
+                    if (!annot) return
+                    const sp = mapToItem(null, m.x, m.y)
+                    root.annotationClicked(annot.id, 5, Qt.point(sp.x, sp.y))
                 }
             }
         }

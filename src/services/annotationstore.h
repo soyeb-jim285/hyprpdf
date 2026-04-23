@@ -19,7 +19,7 @@ class AnnotationStore : public QAbstractListModel {
     Q_PROPERTY(QString currentAuthor READ currentAuthor WRITE setCurrentAuthor NOTIFY currentAuthorChanged)
 
 public:
-    enum Type { Highlight = 0, Underline, Strikeout, StickyNote, Ink };
+    enum Type { Highlight = 0, Underline, Strikeout, StickyNote, Ink, TextBox };
     Q_ENUM(Type)
 
     enum Roles {
@@ -37,6 +37,7 @@ public:
         QPointF anchor;
         QVector<QVector<QPointF>> strokes;
         qreal strokeWidth = 2.0;
+        qreal fontSize = 14.0;
         QColor color;
         QString note;
         QString author;
@@ -59,6 +60,8 @@ public:
                                       const QString &note);
     Q_INVOKABLE QString addInk(int page, QVariantList strokes, const QColor &color,
                                qreal strokeWidth);
+    Q_INVOKABLE QString addTextBox(int page, QPointF anchor, const QColor &color,
+                                   const QString &text, qreal fontSize = 14.0);
 
     Q_INVOKABLE void remove(const QString &id);
     Q_INVOKABLE void setColor(const QString &id, const QColor &color);

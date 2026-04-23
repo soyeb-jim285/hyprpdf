@@ -326,7 +326,7 @@ Item {
                 MouseArea {
                     id: toolArea
                     anchors.fill: parent
-                    enabled: root.activeAnnotTool === 1 || root.activeAnnotTool === 2
+                    enabled: root.activeAnnotTool === 1 || root.activeAnnotTool === 2 || root.activeAnnotTool === 5
                     cursorShape: Qt.CrossCursor
                     acceptedButtons: Qt.LeftButton
                     preventStealing: true
@@ -339,6 +339,12 @@ Item {
                             const scenePt = pageItem.mapToItem(null, m.x, m.y)
                             const id = annotationStore.addStickyNote(
                                     index, ptPts, root.activeAnnotColor, "")
+                            root.stickyCreated(id, index, Qt.point(scenePt.x, scenePt.y))
+                        } else if (root.activeAnnotTool === 5) {
+                            const ptPts = Qt.point(m.x / pageItem.pxPerPt, m.y / pageItem.pxPerPt)
+                            const scenePt = pageItem.mapToItem(null, m.x, m.y)
+                            const id = annotationStore.addTextBox(
+                                    index, ptPts, root.activeAnnotColor, "", 14.0)
                             root.stickyCreated(id, index, Qt.point(scenePt.x, scenePt.y))
                         } else if (root.activeAnnotTool === 2) {
                             currentStroke = [Qt.point(m.x / pageItem.pxPerPt,

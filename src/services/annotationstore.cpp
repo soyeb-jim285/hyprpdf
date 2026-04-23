@@ -79,6 +79,7 @@ static const char *typeToString(int t) {
         case AnnotationStore::Strikeout:  return "strikeout";
         case AnnotationStore::StickyNote: return "stickyNote";
         case AnnotationStore::Ink:        return "ink";
+        case AnnotationStore::TextBox:    return "textBox";
     }
     return "highlight";
 }
@@ -88,6 +89,7 @@ static int typeFromString(const QString &s) {
     if (s == "strikeout")  return AnnotationStore::Strikeout;
     if (s == "stickyNote") return AnnotationStore::StickyNote;
     if (s == "ink")        return AnnotationStore::Ink;
+    if (s == "textBox")    return AnnotationStore::TextBox;
     return AnnotationStore::Highlight;
 }
 
@@ -203,6 +205,7 @@ void AnnotationStore::loadDocument(const QString &hash) {
         if (anc.size() == 2) a.anchor = QPointF(anc[0].toDouble(), anc[1].toDouble());
         a.strokes   = strokesFromJson(o.value("strokes").toArray());
         a.strokeWidth = o.value("strokeWidth").toDouble(2.0);
+        a.fontSize = o.value("fontSize").toDouble(14.0);
         a.color     = QColor(o.value("color").toString());
         a.note      = o.value("note").toString();
         a.author    = o.value("author").toString();
@@ -242,6 +245,7 @@ void AnnotationStore::save() {
         o["anchor"]      = QJsonArray{a.anchor.x(), a.anchor.y()};
         o["strokes"]     = strokesToJson(a.strokes);
         o["strokeWidth"] = a.strokeWidth;
+        o["fontSize"]    = a.fontSize;
         o["color"]       = a.color.name(QColor::HexRgb);
         o["note"]        = a.note;
         o["author"]      = a.author;
@@ -335,6 +339,14 @@ QString AnnotationStore::addInk(int page, QVariantList strokes,
     return addAnnotInternal(a);
 }
 
+QString AnnotationStore::addTextBox(int page, QPointF anchor,
+                                     const QColor &color, const QString &text,
+                                     qreal fontSize) {
+    Annot a; a.type = TextBox; a.page = page;
+    a.anchor = anchor; a.color = color; a.note = text; a.fontSize = fontSize;
+    return addAnnotInternal(a);
+}
+
 void AnnotationStore::remove(const QString &id) {
     const int idx = findIndex(id);
     if (idx < 0) return;
@@ -392,6 +404,7 @@ QVariantList AnnotationStore::annotationsOnPage(int page) const {
         }
         m["strokes"]     = strokes;
         m["strokeWidth"] = m_annots[i].strokeWidth;
+        m["fontSize"]    = m_annots[i].fontSize;
         m["color"]       = m_annots[i].color;
         m["note"]        = m_annots[i].note;
         out.append(m);
@@ -543,6 +556,11 @@ void AnnotationStore::exportMarkdown(const QString &path) const {
             case Ink:
                 out << "- **Ink** `" << colorHex << "` ("
                     << a.strokes.size() << " strokes)\n";
+                break;
+            case TextBox:
+                out << "- **Text** `" << colorHex << "` at ("
+                    << int(a.anchor.x()) << ", " << int(a.anchor.y())
+                    << ") — " << a.note << "\n";
                 break;
         }
     }

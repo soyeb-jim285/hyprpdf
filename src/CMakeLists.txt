@@ -81,6 +81,7 @@ qt_add_qml_module(hyprpdf
         qml/icons/IconHighlighter.qml
         qml/icons/IconUnderline.qml
         qml/icons/IconStrikethrough.qml
+        qml/icons/IconType.qml
     RESOURCE_PREFIX /
 )
 

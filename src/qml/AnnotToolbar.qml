@@ -77,6 +77,11 @@ Rectangle {
             onClicked: root.activeTool = 1
             IconPin { size: 18; color: Theme.text; anchors.centerIn: parent }
         }
+        IBtn {
+            active: root.activeTool === 5
+            onClicked: root.activeTool = 5
+            IconType { size: 18; color: Theme.text; anchors.centerIn: parent }
+        }
 
         Sep {}
 
