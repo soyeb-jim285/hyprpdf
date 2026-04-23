@@ -7,6 +7,7 @@
 #include <QJsonObject>
 #include <QSaveFile>
 #include <QStandardPaths>
+#include <QTextStream>
 #include <QUuid>
 #include <QDateTime>
 #include <QDebug>
@@ -498,6 +499,53 @@ void AnnotationStore::setCurrentAuthor(const QString &a) {
 }
 
 void AnnotationStore::exportMarkdown(const QString &path) const {
-    Q_UNUSED(path);
-    // Stub — full impl lands in Task 4.
+    QSaveFile f(path);
+    if (!f.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+        qWarning() << "exportMarkdown: cannot open" << path << f.errorString();
+        return;
+    }
+    QTextStream out(&f);
+    out.setEncoding(QStringConverter::Utf8);
+
+    out << "# Annotations\n\n";
+    out << "SHA-256: `" << m_docHash << "`\n";
+    out << "Exported: " << QDateTime::currentDateTimeUtc().toString(Qt::ISODate) << "\n";
+    out << "Author: " << m_author << "\n\n";
+
+    QVector<Annot> sorted = m_annots;
+    std::sort(sorted.begin(), sorted.end(), [](const Annot &a, const Annot &b) {
+        if (a.page != b.page) return a.page < b.page;
+        return a.createdAt < b.createdAt;
+    });
+
+    int curPage = -1;
+    for (const auto &a : sorted) {
+        if (a.page != curPage) {
+            curPage = a.page;
+            out << "## Page " << (curPage + 1) << "\n\n";
+        }
+        const QString colorHex = a.color.name(QColor::HexRgb);
+        switch (a.type) {
+            case Highlight:
+                out << "- **Highlight** `" << colorHex << "`\n";
+                break;
+            case Underline:
+                out << "- **Underline** `" << colorHex << "`\n";
+                break;
+            case Strikeout:
+                out << "- **Strikeout** `" << colorHex << "`\n";
+                break;
+            case StickyNote:
+                out << "- **Note** `" << colorHex << "` at ("
+                    << int(a.anchor.x()) << ", " << int(a.anchor.y())
+                    << ") — " << a.note << "\n";
+                break;
+            case Ink:
+                out << "- **Ink** `" << colorHex << "` ("
+                    << a.strokes.size() << " strokes)\n";
+                break;
+        }
+    }
+    out.flush();
+    f.commit();
 }

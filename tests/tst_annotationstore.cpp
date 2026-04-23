@@ -84,6 +84,50 @@ private slots:
         QCOMPARE(store->annotationsOnPage(3).size(), 1);
         QCOMPARE(store->annotationsOnPage(7).size(), 0);
     }
+
+    void undoReversesAdd() {
+        QVariantList r; r.append(QVariant::fromValue(QRectF(0, 0, 10, 10)));
+        store->addHighlight(0, r, QColor("#f9e2af"));
+        QCOMPARE(store->rowCount(), 1);
+        store->undo();
+        QCOMPARE(store->rowCount(), 0);
+    }
+
+    void redoReappliesAdd() {
+        QVariantList r; r.append(QVariant::fromValue(QRectF(0, 0, 10, 10)));
+        store->addHighlight(0, r, QColor("#f9e2af"));
+        store->undo();
+        store->redo();
+        QCOMPARE(store->rowCount(), 1);
+    }
+
+    void undoDepthFiftyEvictsOldest() {
+        QVariantList r; r.append(QVariant::fromValue(QRectF(0, 0, 10, 10)));
+        for (int i = 0; i < 60; ++i)
+            store->addHighlight(0, r, QColor("#f9e2af"));
+        QCOMPARE(store->rowCount(), 60);
+        int undoable = 0;
+        while (store->canUndo()) { store->undo(); ++undoable; if (undoable > 100) break; }
+        QCOMPARE(undoable, 50);
+        QCOMPARE(store->rowCount(), 10);
+    }
+
+    void exportMarkdownContainsTypeAndColor() {
+        QVariantList r; r.append(QVariant::fromValue(QRectF(0, 0, 10, 10)));
+        store->addHighlight(2, r, QColor("#f9e2af"));
+        store->addStickyNote(2, QPointF(50, 50), QColor("#fab387"), "my note");
+        QTemporaryDir d;
+        const QString mdPath = d.path() + "/out.md";
+        store->exportMarkdown(mdPath);
+        QFile f(mdPath);
+        QVERIFY(f.open(QIODevice::ReadOnly));
+        const QString content = QString::fromUtf8(f.readAll());
+        QVERIFY(content.contains("## Page 3"));
+        QVERIFY(content.contains("**Highlight**"));
+        QVERIFY(content.contains("#f9e2af"));
+        QVERIFY(content.contains("**Note**"));
+        QVERIFY(content.contains("my note"));
+    }
 };
 QTEST_MAIN(TestAnnotationStore)
 #include "tst_annotationstore.moc"
