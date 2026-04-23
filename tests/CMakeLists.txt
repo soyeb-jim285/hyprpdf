@@ -37,3 +37,6 @@ hyprpdf_test(tst_outlinemodel
 target_link_libraries(tst_outlinemodel PRIVATE PkgConfig::POPPLER_QT6)
 
 hyprpdf_test(tst_clipboardbridge ${CMAKE_SOURCE_DIR}/src/services/clipboardbridge.cpp)
+
+hyprpdf_test(tst_documenthasher ${CMAKE_SOURCE_DIR}/src/services/documenthasher.cpp)
+target_link_libraries(tst_documenthasher PRIVATE Qt6::Concurrent)

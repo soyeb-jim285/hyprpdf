@@ -7,7 +7,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
 find_package(Qt6 6.6 REQUIRED COMPONENTS
-    Core Gui Qml Quick QuickControls2 Svg Widgets DBus Test
+    Core Gui Qml Quick QuickControls2 Svg Widgets DBus Test Concurrent
 )
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(POPPLER_QT6 REQUIRED IMPORTED_TARGET poppler-qt6)
