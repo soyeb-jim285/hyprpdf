@@ -101,10 +101,18 @@ ApplicationWindow {
     Action { id: actLeft;      text: "Thumbnails panel"; shortcut: "F9"; onTriggered: root.leftPanelVisible = !root.leftPanelVisible }
     Action { id: actRight;     text: "Outline panel";    shortcut: "F10"; onTriggered: root.rightPanelVisible = !root.rightPanelVisible }
     Action { id: actAnnotBar;  text: "Annotation toolbar"; shortcut: "F8"; onTriggered: root.annotToolbarExpanded = !root.annotToolbarExpanded }
+    Action { id: actDelAnnot; shortcut: "Delete"
+             onTriggered: if (annotationStore.selectedId)
+                             annotationStore.remove(annotationStore.selectedId) }
+    Action { id: actUndo;     shortcut: "Ctrl+Z"; onTriggered: annotationStore.undo() }
+    Action { id: actRedo1;    shortcut: "Ctrl+Shift+Z"; onTriggered: annotationStore.redo() }
+    Action { id: actRedo2;    shortcut: "Ctrl+Y"; onTriggered: annotationStore.redo() }
+    Action { id: actExport;   shortcut: "Ctrl+Shift+E"; onTriggered: exportAnnotDialog.open() }
 
     Shortcut { sequence: "/";       onActivated: searchBar.openWithFocus() }
     Shortcut { sequence: "Escape";  onActivated: {
         if (stickyEditor.visible) { stickyEditor.visible = false; return }
+        if (annotCtxPopup.visible) { annotCtxPopup.hide(); return }
         if (selPopup.visible) { selPopup.visible = false; return }
         if (annotToolbar.activeTool !== 0) { annotToolbar.activeTool = 0; return }
         if (searchBar.visible) { searchBar.visible = false; searchController.clear() }
@@ -116,7 +124,40 @@ ApplicationWindow {
     Shortcut { sequence: "PgDown";  onActivated: { var v = curView(); if (v) v.nextPage() } }
     Shortcut { sequence: "PgUp";    onActivated: { var v = curView(); if (v) v.prevPage() } }
 
+    function _findAnnotIndex(id) {
+        for (let i = 0; i < annotationStore.count; ++i) {
+            if (annotationStore.data(annotationStore.index(i, 0), 257) === id)
+                return i
+        }
+        return -1
+    }
+    function _annotNote(idx) {
+        // NoteRole = UserRole+1 + 8 = 265
+        return annotationStore.data(annotationStore.index(idx, 0), 265)
+    }
+
     StickyEditor { id: stickyEditor }
+
+    AnnotContextPopup {
+        id: annotCtxPopup
+        onEditNoteRequested: (id, sceneX, sceneY) => {
+            const idx = _findAnnotIndex(id)
+            if (idx < 0) return
+            const note = _annotNote(idx)
+            stickyEditor.openFor(id, sceneX, sceneY, note)
+        }
+    }
+
+    FileDialog {
+        id: exportAnnotDialog
+        fileMode: FileDialog.SaveFile
+        nameFilters: ["Markdown (*.md)", "All files (*)"]
+        defaultSuffix: "md"
+        onAccepted: {
+            const p = selectedFile.toString().replace("file://", "")
+            annotationStore.exportMarkdown(p)
+        }
+    }
 
     ColumnLayout {
         anchors.fill: parent
@@ -200,6 +241,10 @@ ApplicationWindow {
                             onStickyCreated: (id, page, scenePt) => {
                                 const parentPt = stickyEditor.parent.mapFromItem(null, scenePt.x, scenePt.y)
                                 stickyEditor.openFor(id, parentPt.x, parentPt.y, "")
+                            }
+                            onAnnotationClicked: (id, type, scenePt) => {
+                                const parentPt = annotCtxPopup.parent.mapFromItem(null, scenePt.x, scenePt.y)
+                                annotCtxPopup.showAt(id, type, parentPt.x, parentPt.y)
                             }
                         }
                     }
