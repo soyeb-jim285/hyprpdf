@@ -11,6 +11,8 @@ Item {
     property bool invertColors: false
     property var  searchController: null
 
+    signal annotationClicked(string id, int type, point scenePt)
+
     // Per-page selection rects (word bboxes in PDF points), keyed by page index.
     // Cleared on new drag press. Drawn as persistent highlight overlay.
     property var _selectionByPage: ({})
@@ -185,6 +187,17 @@ Item {
                             property real tintStrength: 0.85
                             fragmentShader: "qrc:/HyprPDF/qml/shaders/highlight_under_text.frag.qsb"
                         }
+                    }
+                }
+
+                AnnotLayer {
+                    anchors.fill: parent
+                    pageIndex: index
+                    pxPerPt: pageItem.pxPerPt
+                    pageImage: img
+                    onAnnotationClicked: (id, type, scenePt) => {
+                        annotationStore.selectedId = id
+                        root.annotationClicked(id, type, scenePt)
                     }
                 }
 

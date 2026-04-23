@@ -43,6 +43,7 @@ qt_add_qml_module(hyprpdf
     VERSION 1.0
     NO_CACHEGEN
     QML_FILES
+        qml/AnnotLayer.qml
         qml/Main.qml
         qml/Theme.qml
         qml/PdfView.qml
