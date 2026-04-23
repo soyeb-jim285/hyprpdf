@@ -248,7 +248,7 @@ Item {
                 MouseArea {
                     id: selArea
                     anchors.fill: parent
-                    enabled: root.activeAnnotTool === 0
+                    enabled: root.activeAnnotTool === 0 || root.activeAnnotTool === 3
                     property point startPt
                     property rect  rubberband
                     acceptedButtons: Qt.LeftButton
@@ -326,7 +326,7 @@ Item {
                 MouseArea {
                     id: toolArea
                     anchors.fill: parent
-                    enabled: root.activeAnnotTool !== 0
+                    enabled: root.activeAnnotTool === 1 || root.activeAnnotTool === 2
                     cursorShape: Qt.CrossCursor
                     acceptedButtons: Qt.LeftButton
                     preventStealing: true

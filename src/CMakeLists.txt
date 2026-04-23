@@ -77,6 +77,10 @@ qt_add_qml_module(hyprpdf
         qml/icons/IconSearch.qml
         qml/icons/IconMoon.qml
         qml/icons/IconSun.qml
+        qml/icons/IconHand.qml
+        qml/icons/IconHighlighter.qml
+        qml/icons/IconUnderline.qml
+        qml/icons/IconStrikethrough.qml
     RESOURCE_PREFIX /
 )
 

@@ -16,9 +16,8 @@ Item {
         }
         delegate: Loader {
             required property var modelData
-            property var annot: modelData
             sourceComponent: {
-                switch (annot.type) {
+                switch (modelData.type) {
                     case 0: return highlightC
                     case 1: return underlineC
                     case 2: return strikeoutC
@@ -27,13 +26,14 @@ Item {
                 }
                 return null
             }
+            onLoaded: if (item) item.annot = modelData
         }
     }
 
     Component {
         id: highlightC
         Item {
-            required property var annot
+            property var annot: null
             Repeater {
                 model: annot.rects
                 delegate: Item {
@@ -75,7 +75,7 @@ Item {
     Component {
         id: underlineC
         Item {
-            required property var annot
+            property var annot: null
             Repeater {
                 model: annot.rects
                 delegate: Rectangle {
@@ -100,7 +100,7 @@ Item {
     Component {
         id: strikeoutC
         Item {
-            required property var annot
+            property var annot: null
             Repeater {
                 model: annot.rects
                 delegate: Rectangle {
@@ -125,7 +125,7 @@ Item {
     Component {
         id: stickyC
         Item {
-            required property var annot
+            property var annot: null
             x: annot.anchor.x * root.pxPerPt - 12
             y: annot.anchor.y * root.pxPerPt - 12
             width: 24
@@ -151,7 +151,7 @@ Item {
     Component {
         id: inkC
         Item {
-            required property var annot
+            property var annot: null
             anchors.fill: parent
             Repeater {
                 model: annot.strokes

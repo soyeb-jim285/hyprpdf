@@ -8,7 +8,7 @@ Rectangle {
     property int annotType: 0
     signal editNoteRequested(string id, real sceneX, real sceneY)
 
-    readonly property var palette: ["#f9e2af", "#a6e3a1", "#f38ba8", "#89b4fa", "#fab387", "#cba6f7"]
+    readonly property var swatches: ["#f9e2af", "#a6e3a1", "#f38ba8", "#89b4fa", "#fab387", "#cba6f7"]
 
     width: 280
     height: 40
@@ -33,7 +33,7 @@ Rectangle {
         anchors.margins: 6
         spacing: 4
         Repeater {
-            model: root.palette
+            model: root.swatches
             delegate: Rectangle {
                 required property string modelData
                 implicitWidth: 22

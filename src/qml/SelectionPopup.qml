@@ -6,8 +6,8 @@ Rectangle {
     id: root
     property int page: 0
     property var rects: []
-    readonly property var palette: ["#f9e2af", "#a6e3a1", "#f38ba8", "#89b4fa", "#fab387", "#cba6f7"]
-    property color activeColor: palette[0]
+    readonly property var swatches: ["#f9e2af", "#a6e3a1", "#f38ba8", "#89b4fa", "#fab387", "#cba6f7"]
+    property color activeColor: swatches[0]
 
     width: 280
     height: 72
@@ -79,7 +79,7 @@ Rectangle {
             Layout.alignment: Qt.AlignHCenter
             spacing: 6
             Repeater {
-                model: root.palette
+                model: root.swatches
                 delegate: Rectangle {
                     required property string modelData
                     implicitWidth: 22
