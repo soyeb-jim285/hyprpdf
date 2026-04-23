@@ -46,3 +46,5 @@ hyprpdf_test(tst_clipboardbridge ${CMAKE_SOURCE_DIR}/src/services/clipboardbridg
 
 hyprpdf_test(tst_documenthasher ${CMAKE_SOURCE_DIR}/src/services/documenthasher.cpp)
 target_link_libraries(tst_documenthasher PRIVATE Qt6::Concurrent)
+
+hyprpdf_test(tst_annotationstore ${CMAKE_SOURCE_DIR}/src/services/annotationstore.cpp)
