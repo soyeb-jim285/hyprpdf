@@ -17,6 +17,8 @@ ApplicationWindow {
     property bool leftPanelVisible: true
     property bool rightPanelVisible: true
     property bool invertColors: false
+    readonly property var sharedSearchController: searchController
+    readonly property var sharedOutlineModel: outlineModel
 
     Component.onCompleted: {
         Q.Theme.background       = Qt.binding(() => Theme.base)
@@ -171,14 +173,23 @@ ApplicationWindow {
                         delegate: PdfView {
                             document: model.document !== undefined ? model.document : null
                             invertColors: root.invertColors
-                            searchController: searchController
+                            searchController: root.sharedSearchController
+                            onTextSelected: (page, rects, scenePt) => {
+                                // Map scenePt (window-level) to selPopup parent coordinates
+                                const parentPt = selPopup.parent.mapFromItem(null, scenePt.x, scenePt.y)
+                                selPopup.showAt(parentPt.x, parentPt.y, page, rects)
+                            }
                         }
                     }
                 }
 
+                SelectionPopup {
+                    id: selPopup
+                }
+
                 SearchBar {
                     id: searchBar
-                    controller: searchController
+                    controller: root.sharedSearchController
                     anchors.top: parent.top
                     anchors.topMargin: 8
                     anchors.horizontalCenter: parent.horizontalCenter
@@ -191,7 +202,7 @@ ApplicationWindow {
                 SplitView.preferredWidth: 240
                 SplitView.minimumWidth: 120
                 visible: root.rightPanelVisible
-                outlineModel: outlineModel
+                outlineModel: root.sharedOutlineModel
                 onPageActivated: (p) => { var v = curView(); if (v) v.goToPage(p) }
             }
         }

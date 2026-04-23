@@ -54,6 +54,7 @@ qt_add_qml_module(hyprpdf
         qml/ThumbnailList.qml
         qml/OutlinePanel.qml
         qml/SearchBar.qml
+        qml/SelectionPopup.qml
         qml/icons/IconFolder.qml
         qml/icons/IconZoomIn.qml
         qml/icons/IconZoomOut.qml

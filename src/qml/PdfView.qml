@@ -12,6 +12,7 @@ Item {
     property var  searchController: null
 
     signal annotationClicked(string id, int type, point scenePt)
+    signal textSelected(int page, var rects, point scenePt)
 
     // Per-page selection rects (word bboxes in PDF points), keyed by page index.
     // Cleared on new drag press. Drawn as persistent highlight overlay.
@@ -295,14 +296,18 @@ Item {
                             m[index] = wordRects
                             root._selectionByPage = m
                             root._selectionRev++
-                            // Compose text by joining word.text for each selected word.
-                            // For now use textInRect of the bbox surrounding selection.
                             let minX = Math.min(sxPt, exPt), maxX = Math.max(sxPt, exPt)
                             let minY = Math.min(syPt, eyPt), maxY = Math.max(syPt, eyPt)
                             const bbox = Qt.rect(minX, minY, maxX - minX, maxY - minY)
                             const txt = root.document.textInRect(index, bbox)
                             if (txt.length > 0 && typeof clipboard !== "undefined") {
                                 clipboard.setText(txt)
+                            }
+                            // Bubble the selection up for the popup
+                            if (wordRects.length > 0) {
+                                const releasePt = mapToItem(null, selArea.rubberband.x + selArea.rubberband.width,
+                                                                    selArea.rubberband.y + selArea.rubberband.height)
+                                root.textSelected(index, wordRects, Qt.point(releasePt.x, releasePt.y))
                             }
                         }
                         rubberband = Qt.rect(0, 0, 0, 0)
