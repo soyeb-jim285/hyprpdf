@@ -65,6 +65,21 @@ private slots:
         QCOMPARE(d->search(0, "").size(), 0);
     }
 
+    void searchRectsAreNormalizedAndReadable() {
+        auto d = PdfDoc::load(fixture());
+        QVERIFY(d != nullptr);
+
+        const auto matches = d->search(0, "The");
+        QVERIFY(!matches.isEmpty());
+
+        const QRectF rect = matches.constFirst().toRectF();
+        QVERIFY(rect.width() > 0);
+        QVERIFY(rect.height() > 0);
+
+        const QString text = d->textInRect(0, rect);
+        QVERIFY2(text.contains("The", Qt::CaseInsensitive), qPrintable(text));
+    }
+
     void textInRectReturnsSomething() {
         auto d = PdfDoc::load(fixture());
         QVERIFY(d != nullptr);
@@ -78,6 +93,22 @@ private slots:
         auto d = PdfDoc::load(fixture());  // sample.pdf has no TOC
         QVERIFY(d != nullptr);
         QCOMPARE(d->toc().size(), 0);
+    }
+
+    void contentHashIsStable() {
+        auto d = PdfDoc::load(fixture());
+        QVERIFY(d != nullptr);
+        const QString a = d->contentHash();
+        const QString b = d->contentHash();
+        QCOMPARE(a, b);
+        QCOMPARE(a.length(), 64);
+    }
+
+    void contentHashDiffersByFile() {
+        auto a = PdfDoc::load(fixture());
+        auto b = PdfDoc::load(QString(HYPRPDF_FIXTURES_DIR) + "/multi.pdf");
+        QVERIFY(a && b);
+        QVERIFY(a->contentHash() != b->contentHash());
     }
 };
 QTEST_MAIN(TestPdfDoc)

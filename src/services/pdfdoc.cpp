@@ -1,4 +1,5 @@
 #include "pdfdoc.h"
+#include "documenthasher.h"
 // NOTE: include path uses -I/usr/include/poppler/qt6; header lives at poppler/qt6/poppler-qt6.h
 #include <poppler-qt6.h>
 #include <QDebug>
@@ -12,15 +13,17 @@ std::unique_ptr<PdfDoc> PdfDoc::load(const QString &path, QObject *parent) {
     doc->setRenderHint(Poppler::Document::Antialiasing, true);
     doc->setRenderHint(Poppler::Document::TextAntialiasing, true);
     doc->setRenderHint(Poppler::Document::TextHinting, true);
-    return std::unique_ptr<PdfDoc>(new PdfDoc(std::move(doc), parent));
+    return std::unique_ptr<PdfDoc>(new PdfDoc(std::move(doc), path, parent));
 }
 
 PdfDoc *PdfDoc::byId(int id) {
     return s_registry.value(id, nullptr);
 }
 
-PdfDoc::PdfDoc(std::unique_ptr<Poppler::Document> doc, QObject *parent)
-    : QObject(parent), m_id(s_nextId++), m_doc(std::move(doc)) {
+PdfDoc::PdfDoc(std::unique_ptr<Poppler::Document> doc,
+               const QString &path,
+               QObject *parent)
+    : QObject(parent), m_id(s_nextId++), m_doc(std::move(doc)), m_path(path) {
     s_registry.insert(m_id, this);
 }
 
@@ -222,4 +225,13 @@ const QVector<PdfDoc::TocEntry> &PdfDoc::toc() const {
         if (m_doc) buildTocFromOutline(m_doc->outline(), m_toc);
     }
     return m_toc;
+}
+
+QString PdfDoc::contentHash() const {
+    if (!m_hashComputed) {
+        DocumentHasher h;
+        m_contentHash = h.hashFileSync(m_path);
+        m_hashComputed = true;
+    }
+    return m_contentHash;
 }

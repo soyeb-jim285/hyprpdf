@@ -7,6 +7,7 @@ qt_add_executable(hyprpdf
     services/pdfpageimageprovider.cpp
     services/searchcontroller.cpp
     services/clipboardbridge.cpp
+    services/documenthasher.cpp
     models/documentmodel.cpp
     models/recentfilesmodel.cpp
     models/outlinemodel.cpp
@@ -21,6 +22,7 @@ target_link_libraries(hyprpdf PRIVATE
     Qt6::Svg
     Qt6::Widgets
     Qt6::DBus
+    Qt6::Concurrent
     PkgConfig::POPPLER_QT6
 )
 
@@ -32,7 +34,7 @@ find_package(Qt6 COMPONENTS ShaderTools REQUIRED)
 qt6_add_shaders(hyprpdf "hyprpdf_shaders"
     PREFIX "/HyprPDF/qml/shaders"
     BASE "qml/shaders"
-    FILES qml/shaders/invert.frag
+    FILES qml/shaders/invert.frag qml/shaders/highlight_under_text.frag
 )
 
 qt_add_qml_module(hyprpdf

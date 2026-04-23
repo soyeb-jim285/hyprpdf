@@ -16,6 +16,7 @@ class PdfDoc : public QObject {
     Q_PROPERTY(int id           READ id           CONSTANT)
     Q_PROPERTY(int pageCount    READ pageCount    CONSTANT)
     Q_PROPERTY(QString title    READ title        CONSTANT)
+    Q_PROPERTY(QString contentHash READ contentHash CONSTANT)
 public:
     // Factory. Returns nullptr on load failure.
     static std::unique_ptr<PdfDoc> load(const QString &path, QObject *parent = nullptr);
@@ -27,6 +28,7 @@ public:
 
     int id() const { return m_id; }
     bool isValid() const;
+    QString contentHash() const;
     int pageCount() const;
     QString title() const;
     Q_INVOKABLE QSizeF pageSize(int index) const;
@@ -55,12 +57,17 @@ public:
     const QVector<TocEntry> &toc() const;
 
 private:
-    explicit PdfDoc(std::unique_ptr<Poppler::Document> doc, QObject *parent = nullptr);
+    explicit PdfDoc(std::unique_ptr<Poppler::Document> doc,
+                    const QString &path,
+                    QObject *parent = nullptr);
 
     int m_id;
     std::unique_ptr<Poppler::Document> m_doc;
+    QString m_path;
     mutable QVector<TocEntry> m_toc;
     mutable bool m_tocBuilt = false;
+    mutable QString m_contentHash;
+    mutable bool m_hashComputed = false;
 
     static int s_nextId;
     static QHash<int, PdfDoc*> s_registry;

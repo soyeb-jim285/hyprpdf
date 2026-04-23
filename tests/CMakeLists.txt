@@ -12,29 +12,35 @@ hyprpdf_test(tst_themeloader ${CMAKE_SOURCE_DIR}/src/services/themeloader.cpp)
 hyprpdf_test(tst_configmanager ${CMAKE_SOURCE_DIR}/src/services/configmanager.cpp)
 hyprpdf_test(tst_recentfilesmodel ${CMAKE_SOURCE_DIR}/src/models/recentfilesmodel.cpp)
 
-hyprpdf_test(tst_pdfdoc ${CMAKE_SOURCE_DIR}/src/services/pdfdoc.cpp)
-target_link_libraries(tst_pdfdoc PRIVATE PkgConfig::POPPLER_QT6)
+hyprpdf_test(tst_pdfdoc
+    ${CMAKE_SOURCE_DIR}/src/services/pdfdoc.cpp
+    ${CMAKE_SOURCE_DIR}/src/services/documenthasher.cpp)
+target_link_libraries(tst_pdfdoc PRIVATE PkgConfig::POPPLER_QT6 Qt6::Concurrent)
 
 hyprpdf_test(tst_documentmodel
     ${CMAKE_SOURCE_DIR}/src/models/documentmodel.cpp
-    ${CMAKE_SOURCE_DIR}/src/services/pdfdoc.cpp)
-target_link_libraries(tst_documentmodel PRIVATE PkgConfig::POPPLER_QT6)
+    ${CMAKE_SOURCE_DIR}/src/services/pdfdoc.cpp
+    ${CMAKE_SOURCE_DIR}/src/services/documenthasher.cpp)
+target_link_libraries(tst_documentmodel PRIVATE PkgConfig::POPPLER_QT6 Qt6::Concurrent)
 
 hyprpdf_test(tst_documentcontroller
     ${CMAKE_SOURCE_DIR}/src/services/documentcontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/models/documentmodel.cpp
-    ${CMAKE_SOURCE_DIR}/src/services/pdfdoc.cpp)
-target_link_libraries(tst_documentcontroller PRIVATE PkgConfig::POPPLER_QT6)
+    ${CMAKE_SOURCE_DIR}/src/services/pdfdoc.cpp
+    ${CMAKE_SOURCE_DIR}/src/services/documenthasher.cpp)
+target_link_libraries(tst_documentcontroller PRIVATE PkgConfig::POPPLER_QT6 Qt6::Concurrent)
 
 hyprpdf_test(tst_searchcontroller
     ${CMAKE_SOURCE_DIR}/src/services/searchcontroller.cpp
-    ${CMAKE_SOURCE_DIR}/src/services/pdfdoc.cpp)
-target_link_libraries(tst_searchcontroller PRIVATE PkgConfig::POPPLER_QT6)
+    ${CMAKE_SOURCE_DIR}/src/services/pdfdoc.cpp
+    ${CMAKE_SOURCE_DIR}/src/services/documenthasher.cpp)
+target_link_libraries(tst_searchcontroller PRIVATE PkgConfig::POPPLER_QT6 Qt6::Concurrent)
 
 hyprpdf_test(tst_outlinemodel
     ${CMAKE_SOURCE_DIR}/src/models/outlinemodel.cpp
-    ${CMAKE_SOURCE_DIR}/src/services/pdfdoc.cpp)
-target_link_libraries(tst_outlinemodel PRIVATE PkgConfig::POPPLER_QT6)
+    ${CMAKE_SOURCE_DIR}/src/services/pdfdoc.cpp
+    ${CMAKE_SOURCE_DIR}/src/services/documenthasher.cpp)
+target_link_libraries(tst_outlinemodel PRIVATE PkgConfig::POPPLER_QT6 Qt6::Concurrent)
 
 hyprpdf_test(tst_clipboardbridge ${CMAKE_SOURCE_DIR}/src/services/clipboardbridge.cpp)
 
