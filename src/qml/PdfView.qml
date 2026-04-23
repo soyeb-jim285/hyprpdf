@@ -13,6 +13,11 @@ Item {
 
     signal annotationClicked(string id, int type, point scenePt)
     signal textSelected(int page, var rects, point scenePt)
+    signal stickyCreated(string id, int page, point scenePt)
+
+    property int activeAnnotTool: 0        // 0 = none, 1 = sticky, 2 = ink
+    property color activeAnnotColor: "#f9e2af"
+    property real activeInkWidth: 2.5
 
     // Per-page selection rects (word bboxes in PDF points), keyed by page index.
     // Cleared on new drag press. Drawn as persistent highlight overlay.
@@ -243,6 +248,7 @@ Item {
                 MouseArea {
                     id: selArea
                     anchors.fill: parent
+                    enabled: root.activeAnnotTool === 0
                     property point startPt
                     property rect  rubberband
                     acceptedButtons: Qt.LeftButton
@@ -315,6 +321,50 @@ Item {
                 }
 
                 // Rubberband hidden — live word-level selection replaces it
+
+                // Tool-aware MouseArea for sticky + ink (takes priority when active)
+                MouseArea {
+                    id: toolArea
+                    anchors.fill: parent
+                    enabled: root.activeAnnotTool !== 0
+                    cursorShape: Qt.CrossCursor
+                    acceptedButtons: Qt.LeftButton
+                    preventStealing: true
+
+                    property var currentStroke: []
+
+                    onPressed: (m) => {
+                        if (root.activeAnnotTool === 1) {
+                            const ptPts = Qt.point(m.x / pageItem.pxPerPt, m.y / pageItem.pxPerPt)
+                            const scenePt = pageItem.mapToItem(null, m.x, m.y)
+                            const id = annotationStore.addStickyNote(
+                                    index, ptPts, root.activeAnnotColor, "")
+                            root.stickyCreated(id, index, Qt.point(scenePt.x, scenePt.y))
+                        } else if (root.activeAnnotTool === 2) {
+                            currentStroke = [Qt.point(m.x / pageItem.pxPerPt,
+                                                     m.y / pageItem.pxPerPt)]
+                        }
+                    }
+                    onPositionChanged: (m) => {
+                        if (!pressed || root.activeAnnotTool !== 2) return
+                        const p = Qt.point(m.x / pageItem.pxPerPt, m.y / pageItem.pxPerPt)
+                        const last = currentStroke[currentStroke.length - 1]
+                        const dx = (p.x - last.x) * pageItem.pxPerPt
+                        const dy = (p.y - last.y) * pageItem.pxPerPt
+                        if ((dx * dx + dy * dy) >= 4) currentStroke.push(p)
+                    }
+                    onReleased: {
+                        if (root.activeAnnotTool !== 2 || currentStroke.length < 2) {
+                            currentStroke = []
+                            return
+                        }
+                        const strokes = [currentStroke]
+                        annotationStore.addInk(index, strokes,
+                                                root.activeAnnotColor,
+                                                root.activeInkWidth)
+                        currentStroke = []
+                    }
+                }
 
                 BusyIndicator {
                     anchors.centerIn: parent

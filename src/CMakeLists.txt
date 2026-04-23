@@ -44,6 +44,8 @@ qt_add_qml_module(hyprpdf
     NO_CACHEGEN
     QML_FILES
         qml/AnnotLayer.qml
+        qml/AnnotToolbar.qml
+        qml/StickyEditor.qml
         qml/Main.qml
         qml/Theme.qml
         qml/PdfView.qml
@@ -61,6 +63,8 @@ qt_add_qml_module(hyprpdf
         qml/icons/IconMaximize.qml
         qml/icons/IconSettings.qml
         qml/icons/IconX.qml
+        qml/icons/IconPin.qml
+        qml/icons/IconPen.qml
         qml/icons/IconPlus.qml
         qml/icons/IconFileText.qml
         qml/icons/IconLayoutGrid.qml

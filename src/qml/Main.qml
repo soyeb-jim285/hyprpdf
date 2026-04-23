@@ -17,6 +17,7 @@ ApplicationWindow {
     property bool leftPanelVisible: true
     property bool rightPanelVisible: true
     property bool invertColors: false
+    property bool annotToolbarExpanded: false
     readonly property var sharedSearchController: searchController
     readonly property var sharedOutlineModel: outlineModel
 
@@ -99,15 +100,23 @@ ApplicationWindow {
     Action { id: actInvert;    text: "Invert colors"; shortcut: "Ctrl+I"; onTriggered: root.invertColors = !root.invertColors }
     Action { id: actLeft;      text: "Thumbnails panel"; shortcut: "F9"; onTriggered: root.leftPanelVisible = !root.leftPanelVisible }
     Action { id: actRight;     text: "Outline panel";    shortcut: "F10"; onTriggered: root.rightPanelVisible = !root.rightPanelVisible }
+    Action { id: actAnnotBar;  text: "Annotation toolbar"; shortcut: "F8"; onTriggered: root.annotToolbarExpanded = !root.annotToolbarExpanded }
 
     Shortcut { sequence: "/";       onActivated: searchBar.openWithFocus() }
-    Shortcut { sequence: "Escape";  onActivated: { if (searchBar.visible) { searchBar.visible = false; searchController.clear() } } }
+    Shortcut { sequence: "Escape";  onActivated: {
+        if (stickyEditor.visible) { stickyEditor.visible = false; return }
+        if (selPopup.visible) { selPopup.visible = false; return }
+        if (annotToolbar.activeTool !== 0) { annotToolbar.activeTool = 0; return }
+        if (searchBar.visible) { searchBar.visible = false; searchController.clear() }
+    } }
     Shortcut { sequence: "g,g";     onActivated: { var v = curView(); if (v) v.goToPage(0) } }
     Shortcut { sequence: "Shift+G"; onActivated: { var v = curView(); if (v && v.document) v.goToPage(v.document.pageCount - 1) } }
     Shortcut { sequence: "j";       onActivated: { var v = curView(); if (v) v.scrollBy(80) } }
     Shortcut { sequence: "k";       onActivated: { var v = curView(); if (v) v.scrollBy(-80) } }
     Shortcut { sequence: "PgDown";  onActivated: { var v = curView(); if (v) v.nextPage() } }
     Shortcut { sequence: "PgUp";    onActivated: { var v = curView(); if (v) v.prevPage() } }
+
+    StickyEditor { id: stickyEditor }
 
     ColumnLayout {
         anchors.fill: parent
@@ -133,6 +142,12 @@ ApplicationWindow {
         TabsBar {
             Layout.fillWidth: true
             onOpenRequested: openDialog.open()
+        }
+
+        AnnotToolbar {
+            id: annotToolbar
+            Layout.fillWidth: true
+            expanded: root.annotToolbarExpanded
         }
 
         SplitView {
@@ -174,10 +189,17 @@ ApplicationWindow {
                             document: model.document !== undefined ? model.document : null
                             invertColors: root.invertColors
                             searchController: root.sharedSearchController
+                            activeAnnotTool: annotToolbar.activeTool
+                            activeAnnotColor: annotToolbar.activeColor
+                            activeInkWidth: annotToolbar.activeInkWidth
                             onTextSelected: (page, rects, scenePt) => {
                                 // Map scenePt (window-level) to selPopup parent coordinates
                                 const parentPt = selPopup.parent.mapFromItem(null, scenePt.x, scenePt.y)
                                 selPopup.showAt(parentPt.x, parentPt.y, page, rects)
+                            }
+                            onStickyCreated: (id, page, scenePt) => {
+                                const parentPt = stickyEditor.parent.mapFromItem(null, scenePt.x, scenePt.y)
+                                stickyEditor.openFor(id, parentPt.x, parentPt.y, "")
                             }
                         }
                     }
