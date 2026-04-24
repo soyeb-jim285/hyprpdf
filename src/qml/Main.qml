@@ -235,10 +235,6 @@ ApplicationWindow {
                             activeAnnotColor: annotToolbar.activeColor
                             activeInkWidth: annotToolbar.activeInkWidth
                             onTextSelected: (page, rects, scenePt) => {
-                                console.log("Main.onTextSelected page=" + page
-                                            + " rects=" + rects.length
-                                            + " tool=" + annotToolbar.activeTool
-                                            + " color=" + annotToolbar.activeColor)
                                 // If Highlight tool is active, apply the chosen style directly
                                 // and skip the popup.
                                 if (annotToolbar.activeTool === 3) {

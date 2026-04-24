@@ -7,6 +7,10 @@ Item {
     property int pageIndex: 0
     property real pxPerPt: 1.0
     property var pageImage: null
+
+    // Fired by Connections in highlightC delegates when the page image finishes
+    // loading; schedules a one-shot capture on each live:false ShaderEffectSource.
+    signal pageImageReady()
     signal annotationClicked(string id, int type, point scenePt)
 
     Repeater {
@@ -49,10 +53,14 @@ Item {
                     ShaderEffectSource {
                         id: src
                         anchors.fill: parent
-                        live: true
+                        live: false
                         hideSource: false
                         sourceItem: root.pageImage
                         sourceRect: Qt.rect(parent.x, parent.y, parent.width, parent.height)
+                    }
+                    Connections {
+                        target: root
+                        function onPageImageReady() { src.scheduleUpdate() }
                     }
                     ShaderEffect {
                         anchors.fill: parent
@@ -162,7 +170,6 @@ Item {
             id: inkRoot
             property var annot: null
             anchors.fill: parent
-            onAnnotChanged: console.log("inkC annot set strokes=" + (annot ? annot.strokes.length : "null") + " w=" + width + " h=" + height + " pxPerPt=" + root.pxPerPt)
             Repeater {
                 model: annot ? annot.strokes : []
                 delegate: Shape {
@@ -170,13 +177,6 @@ Item {
                     required property var modelData
                     anchors.fill: parent
                     preferredRendererType: Shape.GeometryRenderer
-                    Component.onCompleted: {
-                        const len = modelData ? modelData.length : -1
-                        const first = (modelData && modelData[0]) ? (modelData[0].x + "," + modelData[0].y) : "?"
-                        console.log("ink shape: pts=" + len + " first=" + first
-                                    + " color=" + (annot ? annot.color : "null")
-                                    + " w=" + width + " h=" + height)
-                    }
                     ShapePath {
                         strokeColor: annot ? annot.color : "#000000"
                         strokeWidth: annot ? annot.strokeWidth : 2

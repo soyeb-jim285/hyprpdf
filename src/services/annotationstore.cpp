@@ -172,7 +172,6 @@ QVariant AnnotationStore::data(const QModelIndex &index, int role) const {
 }
 
 void AnnotationStore::loadDocument(const QString &hash) {
-    qDebug() << "AnnotationStore::loadDocument hash=" << hash;
     beginResetModel();
     m_annots.clear();
     m_undo.clear();
@@ -233,8 +232,6 @@ void AnnotationStore::clear() {
 }
 
 void AnnotationStore::save() {
-    qDebug() << "AnnotationStore::save docHash=" << m_docHash
-             << "count=" << m_annots.size() << "dir=" << m_storageDir;
     if (m_docHash.isEmpty()) {
         qWarning() << "AnnotationStore::save SKIPPED — empty docHash";
         return;
@@ -298,9 +295,6 @@ QString AnnotationStore::addAnnotInternal(Annot a) {
     a.id = QUuid::createUuid().toString();
     a.author = m_author;
     a.createdAt = QDateTime::currentDateTimeUtc();
-    qDebug() << "AnnotationStore::add type=" << a.type << "page=" << a.page
-             << "rects=" << a.rects.size() << "color=" << a.color.name()
-             << "id=" << a.id << "docHash=" << m_docHash;
 
     beginInsertRows({}, m_annots.size(), m_annots.size());
     m_annots.append(a);
