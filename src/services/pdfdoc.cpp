@@ -3,6 +3,8 @@
 // NOTE: include path uses -I/usr/include/poppler/qt6; header lives at poppler/qt6/poppler-qt6.h
 #include <poppler-qt6.h>
 #include <QDebug>
+#include <algorithm>
+#include <cmath>
 
 int PdfDoc::s_nextId = 1;
 QHash<int, PdfDoc*> PdfDoc::s_registry;
@@ -84,56 +86,74 @@ QString PdfDoc::textInRect(int page, const QRectF &rect) const {
     return p->text(rect).trimmed();
 }
 
-QVariantList PdfDoc::selectionRectsLine(int page, qreal sx, qreal sy,
-                                         qreal ex, qreal ey) const {
-    QVariantList result;
-    if (!m_doc || page < 0 || page >= m_doc->numPages()) return result;
-    auto p = m_doc->page(page);
-    if (!p) return result;
-    auto words = p->textList();
-    if (words.empty()) return result;
+// Build (or return cached) the per-page glyph list used by selection hit-tests.
+// Called from selectionRectsLine (on every mouse-move during drag) and
+// selectionRects. The result is computed once per page per document lifetime.
+const PdfDoc::PageTextCache &PdfDoc::pageTextCache(int page) const {
+    auto it = m_textCache.find(page);
+    if (it != m_textCache.end() && it->second.valid)
+        return it->second;
 
-    // Flatten to character-level bboxes so selection can split words.
-    struct Glyph { QRectF bb; int line = -1; };
-    std::vector<Glyph> glyphs;
-    glyphs.reserve(words.size() * 6);
-    for (const auto &w : words) {
+    PageTextCache &cache = m_textCache[page];
+    cache.valid = false;
+    cache.words.clear();
+    cache.glyphs.clear();
+
+    if (!m_doc || page < 0 || page >= m_doc->numPages()) return cache;
+    auto p = m_doc->page(page);
+    if (!p) return cache;
+    cache.words = p->textList();
+    if (cache.words.empty()) { cache.valid = true; return cache; }
+
+    // Flatten to char-level bboxes so selection can split words.
+    cache.glyphs.reserve(cache.words.size() * 6);
+    for (const auto &w : cache.words) {
         const QRectF wordBB = w->boundingBox();
         const int n = static_cast<int>(w->text().size());
-        if (n <= 0) { glyphs.push_back({wordBB}); continue; }
+        if (n <= 0) { cache.glyphs.push_back({wordBB}); continue; }
         bool anyChar = false;
         for (int i = 0; i < n; ++i) {
             const QRectF cbb = w->charBoundingBox(i);
             if (cbb.isValid() && !cbb.isEmpty()) {
-                glyphs.push_back({cbb});
+                cache.glyphs.push_back({cbb});
                 anyChar = true;
             }
         }
-        if (!anyChar) glyphs.push_back({wordBB});
+        if (!anyChar) cache.glyphs.push_back({wordBB});
     }
-    if (glyphs.empty()) return result;
 
     // Cluster by y-center into lines.
     double avgH = 0;
-    for (const auto &g : glyphs) avgH += g.bb.height();
-    avgH /= std::max<size_t>(1, glyphs.size());
+    for (const auto &g : cache.glyphs) avgH += g.bb.height();
+    avgH /= std::max<size_t>(1, cache.glyphs.size());
     const double lineTol = std::max(1.0, avgH * 0.5);
 
-    std::sort(glyphs.begin(), glyphs.end(), [](const Glyph &a, const Glyph &b) {
-        const double ay = a.bb.center().y(), by = b.bb.center().y();
-        if (std::abs(ay - by) < 0.001) return a.bb.left() < b.bb.left();
-        return ay < by;
-    });
+    std::sort(cache.glyphs.begin(), cache.glyphs.end(),
+              [](const GlyphEntry &a, const GlyphEntry &b) {
+                  const double ay = a.bb.center().y(), by = b.bb.center().y();
+                  if (std::abs(ay - by) < 0.001) return a.bb.left() < b.bb.left();
+                  return ay < by;
+              });
     int curLine = 0;
-    double curY = glyphs.front().bb.center().y();
-    for (auto &g : glyphs) {
+    double curY = cache.glyphs.front().bb.center().y();
+    for (auto &g : cache.glyphs) {
         const double y = g.bb.center().y();
-        if (std::abs(y - curY) > lineTol) {
-            ++curLine;
-            curY = y;
-        }
+        if (std::abs(y - curY) > lineTol) { ++curLine; curY = y; }
         g.line = curLine;
     }
+
+    cache.valid = true;
+    return cache;
+}
+
+QVariantList PdfDoc::selectionRectsLine(int page, qreal sx, qreal sy,
+                                         qreal ex, qreal ey) const {
+    QVariantList result;
+    if (!m_doc || page < 0 || page >= m_doc->numPages()) return result;
+
+    const PageTextCache &cache = pageTextCache(page);
+    const auto &glyphs = cache.glyphs;
+    if (glyphs.empty()) return result;
 
     auto pointLine = [&](double y) -> int {
         for (const auto &g : glyphs) {
@@ -150,9 +170,12 @@ QVariantList PdfDoc::selectionRectsLine(int page, qreal sx, qreal sy,
         std::swap(lineS, lineE);
     }
 
+    // Determine total line count from last glyph (glyphs are sorted by line).
+    const int maxLine = glyphs.back().line;
+
     // Collect selected glyphs then union per-line into one rect per line span.
-    std::vector<QRectF> unionPerLine(curLine + 1);
-    std::vector<bool> lineHasSel(curLine + 1, false);
+    std::vector<QRectF> unionPerLine(maxLine + 1);
+    std::vector<bool> lineHasSel(maxLine + 1, false);
     for (const auto &g : glyphs) {
         if (g.line < lineS || g.line > lineE) continue;
         const double cx = g.bb.center().x();
@@ -180,10 +203,8 @@ QVariantList PdfDoc::selectionRectsLine(int page, qreal sx, qreal sy,
 QVariantList PdfDoc::selectionRects(int page, const QRectF &rect) const {
     QVariantList result;
     if (!m_doc || page < 0 || page >= m_doc->numPages() || rect.isEmpty()) return result;
-    auto p = m_doc->page(page);
-    if (!p) return result;
-    // textList() returns all word boxes on the page (PDF points, top-left origin).
-    auto words = p->textList();
+
+    const PageTextCache &cache = pageTextCache(page);
     // Line-aware selection: any word whose vertical span intersects the
     // drag's vertical span is considered a candidate; then cull on horizontal
     // span so top/bottom partial rows only include the horizontally-hit words.
@@ -191,15 +212,12 @@ QVariantList PdfDoc::selectionRects(int page, const QRectF &rect) const {
     const double yBot = rect.bottom();
     const double xLeft = rect.left();
     const double xRight = rect.right();
-    for (const auto &w : words) {
+    for (const auto &w : cache.words) {
         const QRectF bb = w->boundingBox();
-        // Vertical intersect test: word row overlaps drag vertical span
         if (bb.bottom() < yTop || bb.top() > yBot) continue;
-        // For words fully inside vertical span (mid-rows), keep regardless of x
         const bool topRow = bb.bottom() >= yTop && bb.top() < yTop;
         const bool botRow = bb.top() <= yBot && bb.bottom() > yBot;
         if (topRow || botRow) {
-            // Border row — require horizontal overlap with drag rect
             if (bb.right() < xLeft || bb.left() > xRight) continue;
         }
         result.append(QVariant::fromValue(bb));

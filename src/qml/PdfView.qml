@@ -178,11 +178,17 @@ Item {
                         ShaderEffectSource {
                             id: matchSrc
                             anchors.fill: parent
-                            live: true
+                            live: false
                             hideSource: false
                             sourceItem: root.invertColors ? invertedPage : img
                             sourceRect: Qt.rect(matchRect.x, matchRect.y,
                                                 matchRect.width, matchRect.height)
+                        }
+                        Connections {
+                            target: img
+                            function onStatusChanged() {
+                                if (img.status === Image.Ready) matchSrc.scheduleUpdate()
+                            }
                         }
                         ShaderEffect {
                             anchors.fill: parent
@@ -217,11 +223,17 @@ Item {
                         ShaderEffectSource {
                             id: selSrc
                             anchors.fill: parent
-                            live: true
+                            live: false
                             hideSource: false
                             sourceItem: root.invertColors ? invertedPage : img
                             sourceRect: Qt.rect(selRect.x, selRect.y,
                                                 selRect.width, selRect.height)
+                        }
+                        Connections {
+                            target: img
+                            function onStatusChanged() {
+                                if (img.status === Image.Ready) selSrc.scheduleUpdate()
+                            }
                         }
                         ShaderEffect {
                             anchors.fill: parent
@@ -366,6 +378,7 @@ Item {
                 }
 
                 AnnotLayer {
+                    id: annotLayer
                     anchors.fill: parent
                     z: 10
                     pageIndex: index
@@ -374,6 +387,12 @@ Item {
                     onAnnotationClicked: (id, type, scenePt) => {
                         annotationStore.selectedId = id
                         root.annotationClicked(id, type, scenePt)
+                    }
+                    Connections {
+                        target: img
+                        function onStatusChanged() {
+                            if (img.status === Image.Ready) annotLayer.pageImageReady()
+                        }
                     }
                 }
 

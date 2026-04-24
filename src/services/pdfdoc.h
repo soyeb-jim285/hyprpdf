@@ -8,8 +8,10 @@
 #include <QVector>
 #include <QVariant>
 #include <memory>
+#include <unordered_map>
+#include <vector>
 
-namespace Poppler { class Document; }
+namespace Poppler { class Document; class TextBox; }
 
 class PdfDoc : public QObject {
     Q_OBJECT
@@ -61,6 +63,18 @@ private:
                     const QString &path,
                     QObject *parent = nullptr);
 
+    // Per-page text cache: textList() result + char-level glyph cluster.
+    struct GlyphEntry { QRectF bb; int line = -1; };
+    struct PageTextCache {
+        // Poppler TextBox list — unique_ptr ownership from textList()
+        std::vector<std::unique_ptr<Poppler::TextBox>> words;
+        // Pre-sorted, line-labelled glyph list for selectionRectsLine
+        std::vector<GlyphEntry> glyphs;
+        bool valid = false;
+    };
+
+    const PageTextCache &pageTextCache(int page) const;
+
     int m_id;
     std::unique_ptr<Poppler::Document> m_doc;
     QString m_path;
@@ -68,6 +82,7 @@ private:
     mutable bool m_tocBuilt = false;
     mutable QString m_contentHash;
     mutable bool m_hashComputed = false;
+    mutable std::unordered_map<int, PageTextCache> m_textCache;
 
     static int s_nextId;
     static QHash<int, PdfDoc*> s_registry;
