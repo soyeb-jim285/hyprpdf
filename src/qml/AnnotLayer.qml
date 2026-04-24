@@ -163,25 +163,30 @@ Item {
             Repeater {
                 model: annot ? annot.strokes : []
                 delegate: Shape {
+                    id: stroke
                     required property var modelData
                     anchors.fill: parent
-                    preferredRendererType: Shape.CurveRenderer
+                    preferredRendererType: Shape.GeometryRenderer
                     ShapePath {
                         strokeColor: annot ? annot.color : "#000000"
                         strokeWidth: annot ? annot.strokeWidth : 2
                         fillColor: "transparent"
                         capStyle: ShapePath.RoundCap
                         joinStyle: ShapePath.RoundJoin
-                        scale: Qt.size(root.pxPerPt, root.pxPerPt)
-                        PathPolyline {
+                        startX: stroke.modelData && stroke.modelData.length > 0
+                                ? stroke.modelData[0].x * root.pxPerPt : 0
+                        startY: stroke.modelData && stroke.modelData.length > 0
+                                ? stroke.modelData[0].y * root.pxPerPt : 0
+                        PathSvg {
                             path: {
-                                const pts = []
-                                if (!modelData) return pts
-                                for (let i = 0; i < modelData.length; ++i) {
-                                    const p = modelData[i]
-                                    pts.push(Qt.point(p.x, p.y))
+                                const pts = stroke.modelData
+                                if (!pts || pts.length < 2) return ""
+                                let s = ""
+                                for (let i = 1; i < pts.length; ++i) {
+                                    s += " L " + (pts[i].x * root.pxPerPt)
+                                              + " " + (pts[i].y * root.pxPerPt)
                                 }
-                                return pts
+                                return s
                             }
                         }
                     }
