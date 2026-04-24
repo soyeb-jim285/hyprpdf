@@ -8,6 +8,15 @@ Item {
     property real pxPerPt: 1.0
     property var pageImage: null
 
+    function _inkPath(points) {
+        if (!points || points.length < 2) return ""
+        let path = "M " + (points[0].x * root.pxPerPt) + " " + (points[0].y * root.pxPerPt)
+        for (let i = 1; i < points.length; ++i) {
+            path += " L " + (points[i].x * root.pxPerPt) + " " + (points[i].y * root.pxPerPt)
+        }
+        return path
+    }
+
     // Fired by Connections in highlightC delegates when the page image finishes
     // loading; schedules a one-shot capture on each live:false ShaderEffectSource.
     signal pageImageReady()
@@ -183,21 +192,8 @@ Item {
                         fillColor: "transparent"
                         capStyle: ShapePath.RoundCap
                         joinStyle: ShapePath.RoundJoin
-                        startX: stroke.modelData && stroke.modelData.length > 0
-                                ? stroke.modelData[0].x * root.pxPerPt : 0
-                        startY: stroke.modelData && stroke.modelData.length > 0
-                                ? stroke.modelData[0].y * root.pxPerPt : 0
                         PathSvg {
-                            path: {
-                                const pts = stroke.modelData
-                                if (!pts || pts.length < 2) return ""
-                                let s = ""
-                                for (let i = 1; i < pts.length; ++i) {
-                                    s += " L " + (pts[i].x * root.pxPerPt)
-                                              + " " + (pts[i].y * root.pxPerPt)
-                                }
-                                return s
-                            }
+                            path: root._inkPath(stroke.modelData)
                         }
                     }
                 }

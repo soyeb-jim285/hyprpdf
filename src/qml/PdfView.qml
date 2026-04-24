@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Shapes
 import HyprPDF 1.0
 
 Item {
@@ -30,6 +31,15 @@ Item {
 
     // Increments on every resultsChanged — forces Repeater model to re-evaluate
     property int _searchRev: 0
+
+    function _inkPath(points, pxPerPt) {
+        if (!points || points.length < 2) return ""
+        let path = "M " + (points[0].x * pxPerPt) + " " + (points[0].y * pxPerPt)
+        for (let i = 1; i < points.length; ++i) {
+            path += " L " + (points[i].x * pxPerPt) + " " + (points[i].y * pxPerPt)
+        }
+        return path
+    }
 
     // Manual signal wiring in addition to Connections — the declarative Connections
     // inside per-tab PdfView instances was silently not firing.
@@ -324,10 +334,13 @@ Item {
 
                 // Rubberband hidden — live word-level selection replaces it
 
-                // Tool-aware MouseArea for sticky + ink (takes priority when active)
+                // Tool-aware MouseArea for sticky + ink (takes priority when active).
+                // z above AnnotLayer (z:10) so the pen tool is never shadowed by
+                // existing annotation delegates that fill the page.
                 MouseArea {
                     id: toolArea
                     anchors.fill: parent
+                    z: 11
                     enabled: root.activeAnnotTool === 1 || root.activeAnnotTool === 2 || root.activeAnnotTool === 5
                     cursorShape: (root.activeAnnotTool === 1
                                 || root.activeAnnotTool === 2
@@ -336,7 +349,16 @@ Item {
                     acceptedButtons: Qt.LeftButton
                     preventStealing: true
 
+                    // Points accumulated during an in-progress ink stroke, in PDF points.
+                    // _strokeRev bumps on every append so bindings that depend on the
+                    // array (live-preview Shape) re-evaluate — JS Array.push is invisible
+                    // to QML's property-change system.
                     property var currentStroke: []
+                    property int _strokeRev: 0
+                    readonly property bool hasVisibleStroke: {
+                        _strokeRev
+                        return currentStroke.length >= 2
+                    }
 
                     onPressed: (m) => {
                         if (root.activeAnnotTool === 1) {
@@ -354,6 +376,12 @@ Item {
                         } else if (root.activeAnnotTool === 2) {
                             currentStroke = [Qt.point(m.x / pageItem.pxPerPt,
                                                      m.y / pageItem.pxPerPt)]
+                            _strokeRev++
+                            console.info("HyprPDF ink stroke started on page",
+                                         index,
+                                         "at",
+                                         currentStroke[0].x,
+                                         currentStroke[0].y)
                         }
                     }
                     onPositionChanged: (m) => {
@@ -362,18 +390,73 @@ Item {
                         const last = currentStroke[currentStroke.length - 1]
                         const dx = (p.x - last.x) * pageItem.pxPerPt
                         const dy = (p.y - last.y) * pageItem.pxPerPt
-                        if ((dx * dx + dy * dy) >= 4) currentStroke.push(p)
+                        if ((dx * dx + dy * dy) >= 4) {
+                            currentStroke.push(p)
+                            _strokeRev++
+                        }
                     }
                     onReleased: {
-                        if (root.activeAnnotTool !== 2 || currentStroke.length < 2) {
+                        if (root.activeAnnotTool !== 2) {
+                            if (currentStroke.length > 0) {
+                                console.warn("HyprPDF ink stroke discarded because the active tool changed on page",
+                                             index)
+                            }
                             currentStroke = []
+                            _strokeRev++
                             return
                         }
-                        const strokes = [currentStroke]
-                        annotationStore.addInk(index, strokes,
-                                                root.activeAnnotColor,
-                                                root.activeInkWidth)
+                        if (currentStroke.length < 2) {
+                            // Tap without drag: add a tiny dot so the gesture isn't silently dropped.
+                            const p = currentStroke[0]
+                            if (p) {
+                                const tail = Qt.point(p.x + 0.5, p.y + 0.5)
+                                const inkId = annotationStore.addInk(index, [[p, tail]],
+                                                                     root.activeAnnotColor,
+                                                                     root.activeInkWidth)
+                                console.info("HyprPDF ink tap committed on page",
+                                             index,
+                                             "id",
+                                             inkId,
+                                             "width",
+                                             root.activeInkWidth)
+                            }
+                            currentStroke = []; _strokeRev++; return
+                        }
+                        const inkId = annotationStore.addInk(index, [currentStroke],
+                                                             root.activeAnnotColor,
+                                                             root.activeInkWidth)
+                        console.info("HyprPDF ink stroke committed on page",
+                                     index,
+                                     "id",
+                                     inkId,
+                                     "points",
+                                     currentStroke.length,
+                                     "width",
+                                     root.activeInkWidth)
                         currentStroke = []
+                        _strokeRev++
+                    }
+                }
+
+                // Live preview of the in-progress pen stroke. Sits above AnnotLayer
+                // so it's never occluded by existing ink annotations on the page.
+                Shape {
+                    anchors.fill: parent
+                    z: 12
+                    visible: root.activeAnnotTool === 2 && toolArea.hasVisibleStroke
+                    preferredRendererType: Shape.GeometryRenderer
+                    ShapePath {
+                        strokeColor: root.activeAnnotColor
+                        strokeWidth: root.activeInkWidth
+                        fillColor: "transparent"
+                        capStyle: ShapePath.RoundCap
+                        joinStyle: ShapePath.RoundJoin
+                        PathSvg {
+                            path: {
+                                toolArea._strokeRev
+                                return root._inkPath(toolArea.currentStroke, pageItem.pxPerPt)
+                            }
+                        }
                     }
                 }
 

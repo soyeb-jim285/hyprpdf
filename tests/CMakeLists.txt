@@ -48,3 +48,4 @@ hyprpdf_test(tst_documenthasher ${CMAKE_SOURCE_DIR}/src/services/documenthasher.
 target_link_libraries(tst_documenthasher PRIVATE Qt6::Concurrent)
 
 hyprpdf_test(tst_annotationstore ${CMAKE_SOURCE_DIR}/src/services/annotationstore.cpp)
+target_link_libraries(tst_annotationstore PRIVATE Qt6::Qml)

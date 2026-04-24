@@ -6,11 +6,13 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QSaveFile>
+#include <QJSValue>
 #include <QStandardPaths>
 #include <QTextStream>
 #include <QUuid>
 #include <QDateTime>
 #include <QDebug>
+#include <optional>
 
 static QVector<QRectF> rectsFromVariant(const QVariantList &vs) {
     QVector<QRectF> out; out.reserve(vs.size());
@@ -18,13 +20,86 @@ static QVector<QRectF> rectsFromVariant(const QVariantList &vs) {
     return out;
 }
 
+static std::optional<QPointF> pointFromVariant(const QVariant &v) {
+    if (v.canConvert<QJSValue>()) {
+        const QVariant converted = v.value<QJSValue>().toVariant();
+        if (converted.isValid() && converted != v) return pointFromVariant(converted);
+    }
+
+    switch (v.metaType().id()) {
+        case QMetaType::QPointF:
+        case QMetaType::QPoint:
+            return v.toPointF();
+        default:
+            break;
+    }
+
+    const QVariantMap pointMap = v.toMap();
+    if (pointMap.contains("x") && pointMap.contains("y")) {
+        return QPointF(pointMap.value("x").toDouble(),
+                       pointMap.value("y").toDouble());
+    }
+
+    const QVariantList pair = v.toList();
+    if (pair.size() == 2
+            && pair.at(0).canConvert<double>()
+            && pair.at(1).canConvert<double>()) {
+        return QPointF(pair.at(0).toDouble(), pair.at(1).toDouble());
+    }
+
+    return std::nullopt;
+}
+
+static QVector<QPointF> strokePointsFromVariant(const QVariantList &points,
+                                                int strokeIndex = 0) {
+    QVector<QPointF> out;
+    out.reserve(points.size());
+    for (int pointIndex = 0; pointIndex < points.size(); ++pointIndex) {
+        const auto point = pointFromVariant(points[pointIndex]);
+        if (!point.has_value()) {
+            qWarning() << "AnnotationStore::addInk dropped malformed point"
+                       << "stroke" << strokeIndex
+                       << "point" << pointIndex
+                       << "type" << points[pointIndex].metaType().name();
+            continue;
+        }
+        out.append(*point);
+    }
+    return out;
+}
+
 static QVector<QVector<QPointF>> strokesFromVariant(const QVariantList &vs) {
-    QVector<QVector<QPointF>> out; out.reserve(vs.size());
-    for (const auto &v : vs) {
-        QVector<QPointF> pts;
-        const auto inner = v.toList();
-        for (const auto &p : inner) pts.append(p.toPointF());
-        out.append(pts);
+    QVector<QVector<QPointF>> out;
+    if (vs.isEmpty()) return out;
+
+    // QML/C++ commonly pass a flat point list for a single stroke. Accept that
+    // directly, while still supporting the explicit list-of-strokes shape.
+    if (pointFromVariant(vs.first()).has_value()) {
+        const auto points = strokePointsFromVariant(vs);
+        if (points.size() < 2) {
+            qWarning() << "AnnotationStore::addInk skipped stroke with fewer than two points"
+                       << 0 << "points" << points.size();
+            return out;
+        }
+        out.append(points);
+        return out;
+    }
+
+    out.reserve(vs.size());
+    for (int strokeIndex = 0; strokeIndex < vs.size(); ++strokeIndex) {
+        const auto inner = vs[strokeIndex].toList();
+        if (inner.isEmpty()) {
+            qWarning() << "AnnotationStore::addInk skipped malformed stroke"
+                       << strokeIndex << "type" << vs[strokeIndex].metaType().name();
+            continue;
+        }
+        const auto points = strokePointsFromVariant(inner, strokeIndex);
+        if (points.size() < 2) {
+            qWarning() << "AnnotationStore::addInk skipped stroke with fewer than two points"
+                       << strokeIndex << "points" << points.size();
+            continue;
+        }
+        out.append(points);
     }
     return out;
 }
@@ -157,7 +232,7 @@ QVariant AnnotationStore::data(const QModelIndex &index, int role) const {
             for (const auto &s : a.strokes) {
                 QVariantList pts;
                 for (const auto &p : s) pts.append(p);
-                out.append(pts);
+                out.append(QVariant::fromValue(pts));
             }
             return out;
         }
@@ -339,6 +414,21 @@ QString AnnotationStore::addInk(int page, QVariantList strokes,
     Annot a; a.type = Ink; a.page = page;
     a.strokes = strokesFromVariant(strokes);
     a.color = color; a.strokeWidth = strokeWidth;
+
+    int pointCount = 0;
+    for (const auto &stroke : a.strokes) pointCount += stroke.size();
+
+    if (a.strokes.isEmpty()) {
+        qWarning() << "AnnotationStore::addInk ignored empty or malformed ink stroke on page"
+                   << page << "width" << strokeWidth;
+        return {};
+    }
+
+    qInfo() << "AnnotationStore::addInk page" << page
+            << "strokes" << a.strokes.size()
+            << "points" << pointCount
+            << "width" << strokeWidth;
+
     return addAnnotInternal(a);
 }
 
@@ -403,7 +493,7 @@ QVariantList AnnotationStore::annotationsOnPage(int page) const {
         for (const auto &s : m_annots[i].strokes) {
             QVariantList pts;
             for (const auto &p : s) pts.append(p);
-            strokes.append(pts);
+            strokes.append(QVariant::fromValue(pts));
         }
         m["strokes"]     = strokes;
         m["strokeWidth"] = m_annots[i].strokeWidth;
