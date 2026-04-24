@@ -80,11 +80,14 @@ int main(int argc, char *argv[]) {
     QObject::connect(documentModel, &DocumentModel::currentIndexChanged,
                      annotationStore, [annotationStore, documentModel]() {
         const int cur = documentModel->currentIndex();
+        qDebug() << "main.cpp: documentModel.currentIndexChanged cur=" << cur;
         if (cur < 0) { annotationStore->clear(); return; }
         const auto idx = documentModel->index(cur, 0);
         const auto doc = idx.data(DocumentModel::DocumentRole).value<QObject*>();
+        qDebug() << "main.cpp: DocumentRole obj=" << doc;
         auto *pdf = qobject_cast<PdfDoc*>(doc);
         const QString hash = pdf ? pdf->contentHash() : QString();
+        qDebug() << "main.cpp: forwarding hash=" << hash << "to annotationStore";
         annotationStore->loadDocument(hash);
     });
 

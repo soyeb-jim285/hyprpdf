@@ -48,7 +48,7 @@ Item {
                     ShaderEffectSource {
                         id: src
                         anchors.fill: parent
-                        live: false
+                        live: true
                         hideSource: false
                         sourceItem: root.pageImage
                         sourceRect: Qt.rect(parent.x, parent.y, parent.width, parent.height)
