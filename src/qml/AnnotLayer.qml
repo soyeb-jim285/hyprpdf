@@ -15,6 +15,7 @@ Item {
             return annotationStore.annotationsOnPage(root.pageIndex)
         }
         delegate: Loader {
+            anchors.fill: parent
             required property var modelData
             sourceComponent: {
                 if (!modelData) return null
