@@ -242,7 +242,7 @@ Item {
                     property point startPt
                     property rect  rubberband
                     acceptedButtons: Qt.LeftButton
-                    cursorShape: Qt.IBeamCursor
+                    cursorShape: root.activeAnnotTool === 3 ? Qt.IBeamCursor : Qt.ArrowCursor
                     preventStealing: true
                     propagateComposedEvents: false
 
