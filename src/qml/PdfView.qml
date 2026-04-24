@@ -196,16 +196,6 @@ Item {
                     }
                 }
 
-                AnnotLayer {
-                    anchors.fill: parent
-                    pageIndex: index
-                    pxPerPt: pageItem.pxPerPt
-                    pageImage: img
-                    onAnnotationClicked: (id, type, scenePt) => {
-                        annotationStore.selectedId = id
-                        root.annotationClicked(id, type, scenePt)
-                    }
-                }
 
                 // Persistent selection highlight overlay (word-level bboxes).
                 Repeater {
@@ -369,6 +359,18 @@ Item {
                                                 root.activeAnnotColor,
                                                 root.activeInkWidth)
                         currentStroke = []
+                    }
+                }
+
+                AnnotLayer {
+                    anchors.fill: parent
+                    z: 10
+                    pageIndex: index
+                    pxPerPt: pageItem.pxPerPt
+                    pageImage: img
+                    onAnnotationClicked: (id, type, scenePt) => {
+                        annotationStore.selectedId = id
+                        root.annotationClicked(id, type, scenePt)
                     }
                 }
 
