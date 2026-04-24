@@ -317,7 +317,10 @@ Item {
                     id: toolArea
                     anchors.fill: parent
                     enabled: root.activeAnnotTool === 1 || root.activeAnnotTool === 2 || root.activeAnnotTool === 5
-                    cursorShape: Qt.CrossCursor
+                    cursorShape: (root.activeAnnotTool === 1
+                                || root.activeAnnotTool === 2
+                                || root.activeAnnotTool === 5)
+                                 ? Qt.CrossCursor : Qt.ArrowCursor
                     acceptedButtons: Qt.LeftButton
                     preventStealing: true
 
