@@ -268,6 +268,7 @@ ApplicationWindow {
 
                 SelectionPopup {
                     id: selPopup
+                    activeColor: annotToolbar.activeColor
                 }
 
                 SearchBar {
